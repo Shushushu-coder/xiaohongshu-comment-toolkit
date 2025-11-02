@@ -2,8 +2,10 @@
 小红书爬虫主程序
 谷雨品牌评论收集 + 用户可信度评分
 """
+import random
 import sys
 from pathlib import Path
+import time
 
 # 添加项目路径
 sys.path.insert(0, str(Path(__file__).parent))
@@ -72,6 +74,13 @@ class GuyuCommentCollector:
                 # 5. 爬取每个笔记的评论
                 for idx, post_url in enumerate(post_links, 1):
                     self.logger.info(f"\n处理笔记 {idx}/{len(post_links)}: {post_url}")
+                    
+                    # ===== 添加这段代码 =====
+                    if idx > 1:  # 第一个笔记不需要等待
+                        wait_time = random.randint(30, 60)
+                        self.logger.info(f"等待 {wait_time} 秒后访问下一个笔记...")
+                        time.sleep(wait_time)
+                    # =====================
                     
                     comments = self.scraper.scrape_post_comments(post_url)
                     
@@ -172,7 +181,7 @@ class GuyuCommentCollector:
             
             # 保存评分详情
             scores_df.to_csv(
-                Path(config['storage']['output_dir']) / 'user_credibility_scores.csv',
+                Path(config.get['storage']['output_dir']) / 'user_credibility_scores.csv',
                 index=False,
                 encoding='utf-8-sig'
             )
@@ -190,7 +199,10 @@ class GuyuCommentCollector:
         self.logger.info("保存中间数据...")
         
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        backup_dir = Path(config['storage']['backup_dir'])
+        
+        # 修复: 使用 config.get() 而不是 config[]
+        backup_dir = Path(config.get('storage', {}).get('backup_dir', './data/backup'))
+        backup_dir.mkdir(parents=True, exist_ok=True)  # 确保目录存在
         
         if self.all_comments:
             backup_file = backup_dir / f"comments_backup_{timestamp}.json"
@@ -209,14 +221,17 @@ class GuyuCommentCollector:
         self.logger.info("\n保存最终数据...")
         
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        output_dir = Path(config['storage']['output_dir'])
+        
+        # 修复: 使用 config.get()
+        output_dir = Path(config.get('storage', {}).get('output_dir', './data/output'))
+        output_dir.mkdir(parents=True, exist_ok=True)  # 确保目录存在
         
         # 保存过滤后的评论
         if hasattr(self, 'filtered_comments') and len(self.filtered_comments) > 0:
             # CSV格式
             csv_file = output_dir / f"guyu_comments_filtered_{timestamp}.csv"
             self.filtered_comments.to_csv(csv_file, index=False, encoding='utf-8-sig')
-            self.logger.info(f"✓ 评论数据(CSV): {csv_file}")
+            self.logger.info(f"✅ 评论数据(CSV): {csv_file}")
             
             # JSON格式
             json_file = output_dir / f"guyu_comments_filtered_{timestamp}.json"
@@ -226,13 +241,14 @@ class GuyuCommentCollector:
                 force_ascii=False, 
                 indent=2
             )
-            self.logger.info(f"✓ 评论数据(JSON): {json_file}")
+            self.logger.info(f"✅ 评论数据(JSON): {json_file}")
         
         # 保存过滤后的用户
         if hasattr(self, 'filtered_users') and len(self.filtered_users) > 0:
             csv_file = output_dir / f"guyu_users_filtered_{timestamp}.csv"
             self.filtered_users.to_csv(csv_file, index=False, encoding='utf-8-sig')
-            self.logger.info(f"✓ 用户数据(CSV): {csv_file}")
+            self.logger.info(f"✅ 用户数据(CSV): {csv_file}")
+
     
     def _generate_report(self):
         """生成数据收集报告"""
@@ -240,9 +256,10 @@ class GuyuCommentCollector:
         self.logger.info("数据收集报告")
         self.logger.info("=" * 60)
         
+        # 修复: 使用 config.get()
         report = {
             'collection_time': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-            'target_brand': config['target_brand'],
+            'target_brand': config.get('target_brand', '谷雨'),
             'raw_data': {
                 'comments': len(self.all_comments),
                 'users': len(self.all_users)
@@ -268,7 +285,9 @@ class GuyuCommentCollector:
             self.logger.info(f"  保留率: {filter_rate:.1f}%")
         
         # 保存报告
-        report_file = Path(config['storage']['output_dir']) / 'collection_report.json'
+        output_dir = Path(config.get('storage', {}).get('output_dir', './data/output'))
+        output_dir.mkdir(parents=True, exist_ok=True)
+        report_file = output_dir / 'collection_report.json'
         with open(report_file, 'w', encoding='utf-8') as f:
             json.dump(report, f, ensure_ascii=False, indent=2)
         self.logger.info(f"\n报告已保存: {report_file}")
@@ -294,3 +313,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+    # 首先运行    taskkill /F /IM chrome.exe /T
