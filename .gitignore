@@ -1,0 +1,22 @@
+
+# Python 缓存
+__pycache__/
+*.pyc
+
+# 你的虚拟环境 (scraper)
+scraper/
+venv/
+.venv/
+
+# 日志文件
+logs/
+*.log
+
+# 所有数据、Cookies、截图和备份
+data/
+
+# 敏感的配置文件
+config/config.yaml
+
+# 升级脚本产生的备份文件
+*.backup_*
