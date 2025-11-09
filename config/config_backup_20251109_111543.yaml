@@ -1,0 +1,381 @@
+# 小红书爬虫系统配置文件 - 慢速安全模式 ⭐⭐⭐⭐⭐
+# 最后更新: 2025-11-02
+# 模式: 远程调试模式 + 慢速安全模式 (避免风控)
+# 
+# 🔴 关键修改说明:
+# 1. 爬取数量: 50 → 5 (每次只爬5个笔记)
+# 2. 笔记间延迟: 新增 60-120 秒超长等待
+# 3. 页面延迟: 大幅增加所有延迟时间
+# 4. 随机行为: 增加随机跳过、随机停留
+# 5. 目标: 避免触发"笔记无法浏览"的风控
+#
+# 💡 使用建议:
+# - 每天运行 2-3 次
+# - 每次间隔 4-6 小时
+# - 避免高峰期（晚8-11点）
+# - 一周可稳定收集 70-100 个笔记
+#
+# ==================== 账号配置 ====================
+accounts:
+  - phone: "***78848565"
+    password: ""              # 远程调试模式下可留空，手动登录
+    cookie_file: "cookies/xiaohongshu_cookies.json"
+
+# ==================== 爬虫配置 ====================
+scraper:
+  # 目标品牌
+  brand_name: "谷雨"
+  
+  # 搜索配置
+  search:
+    max_notes: 5              # 🔴 从 50 改为 5 (每次只爬5个笔记)
+    search_type: "综合"         # 搜索类型: 综合/最新/最热
+  
+  # 延迟配置(秒) - 🔴 大幅增加所有延迟
+  delays:
+    page_load:                 # 页面加载等待
+      min: 8                   # 🔴 从 3 改为 8
+      max: 15                  # 🔴 从 8 改为 15
+    
+    scroll:                    # 滚动延迟
+      min: 3                   # 🔴 从 1 改为 3
+      max: 8                   # 🔴 从 3 改为 8
+    
+    click:                     # 点击延迟
+      min: 5                   # 🔴 从 2 改为 5
+      max: 12                  # 🔴 从 5 改为 12
+    
+    read_comment:              # 阅读评论延迟
+      min: 2                   # 🔴 从 0.5 改为 2
+      max: 6                   # 🔴 从 2 改为 6
+    
+    search:                    # 搜索后等待
+      min: 8                   # 🔴 从 5 改为 8
+      max: 15                  # 🔴 从 10 改为 15
+    
+    # ===== 🔴 新增：超重要的笔记间延迟 =====
+    between_notes:             # 每个笔记之间的等待时间
+      min: 60                  # 最少等待60秒（1分钟）
+      max: 120                 # 最多等待120秒（2分钟）
+    
+    read_content:              # 阅读笔记内容的时间
+      min: 10                  # 阅读10-30秒
+      max: 30
+    
+    view_comments_delay:       # 查看评论前的等待
+      min: 5                   # 等待5-15秒
+      max: 15
+    
+    after_error:               # 发生错误后的冷却时间
+      min: 30                  # 至少等待30秒
+      max: 60                  # 最多等待60秒
+  
+  # ⭐ 远程调试模式配置
+  remote_debug:
+    enabled: true              # 启用远程调试模式
+    port: 9222                 # Chrome调试端口
+    host: "127.0.0.1"         # 调试地址
+    
+  # 浏览器配置
+  browser:
+    headless: false           # 必须为 false
+    window_size: "1920,1080"
+  
+  # 登录配置
+  login:
+    method: "manual"          # 手动登录
+    auto_save: false
+  
+  # 评论抓取配置
+  comments:
+    max_per_note: 50          # 🔴 从 100 改为 50 (减少单个笔记的爬取量)
+    load_more_times: 3        # 🔴 从 5 改为 3 (减少加载次数)
+    include_replies: true
+  
+  # 重试配置
+  max_retries: 2              # 🔴 从 3 改为 2 (减少重试次数)
+  retry_delay: 60             # 重试延迟(秒)
+  
+  # 反爬虫策略 - 🔴 增强版
+  anti_detection:
+    random_scroll: true       # 随机滚动
+    mouse_movement: true      # 模拟鼠标移动
+    bezier_curve: true        # 贝塞尔曲线移动
+    pause_on_captcha: true    # 遇到验证码时暂停
+    
+    # ===== 🔴 新增：随机行为配置 =====
+    random_behaviors:
+      # 随机跳过笔记（模拟不感兴趣）
+      skip_note:
+        enabled: true
+        probability: 0.3      # 30% 概率跳过当前笔记
+      
+      # 随机停留（模拟思考/阅读）
+      random_pause:
+        enabled: true
+        probability: 0.5      # 50% 概率随机停留
+        duration_min: 5       # 停留5-20秒
+        duration_max: 20
+      
+      # 随机滚动（模拟浏览图片）
+      extra_scroll:
+        enabled: true
+        probability: 0.4      # 40% 概率额外滚动
+        times_min: 1          # 滚动1-3次
+        times_max: 3
+      
+      # 随机不查看评论（模拟只看笔记）
+      skip_comments:
+        enabled: true
+        probability: 0.2      # 20% 概率不查看评论
+  
+  # 调试模式
+  debug_mode: false
+  save_screenshots: true
+  screenshot_dir: "data/screenshots"
+
+# ==================== 用户可信度评分配置 ====================
+credibility:
+  enabled: true
+  threshold: 0.6              # 可信度阈值
+  
+  # 各维度权重
+  weights:
+    account_age: 0.20
+    content_diversity: 0.25
+    engagement_ratio: 0.15
+    posting_pattern: 0.20
+    follower_quality: 0.20
+  
+  # 账号年龄评分参数
+  account_age:
+    max_days: 730
+    min_days: 30
+  
+  # 内容多样性评分参数
+  content_diversity:
+    min_categories: 1
+    max_categories: 5
+  
+  # 互动比例评分参数
+  engagement_ratio:
+    normal_range:
+      min: 10
+      max: 1000
+    low_penalty: 0.5
+    high_penalty: 0.3
+  
+  # 发布模式评分参数
+  posting_pattern:
+    min_variance: 1
+    max_variance: 24
+  
+  # 粉丝质量评分参数
+  follower_quality:
+    normal_ratio:
+      min: 0.5
+      max: 10
+    zero_follower_score: 0.3
+
+# ==================== 评论质量过滤配置 ====================
+comment_filter:
+  enabled: true
+  min_length: 5
+  max_length: 500
+  
+  # 排除的关键词(营销词汇)
+  exclude_keywords:
+    - "加v"
+    - "加微信"
+    - "私信"
+    - "链接"
+    - "淘宝"
+    - "拼多多"
+    - "代购"
+    - "团购"
+    - "优惠券"
+    - "返现"
+    - "刷单"
+    - "好评返现"
+  
+  # 排除的模式(正则表达式)
+  exclude_patterns:
+    - '\d{5,}'
+    - '[a-zA-Z0-9]{10,}'
+  
+  # 去重配置
+  deduplicate: true
+  similarity_threshold: 0.9
+
+# ==================== 数据输出配置 ====================
+output:
+  base_dir: "data"
+  
+  directories:
+    raw_comments: "raw_comments"
+    filtered_comments: "filtered"
+    user_profiles: "user_profiles"
+    reports: "reports"
+    screenshots: "screenshots"
+    backups: "backups"
+  
+  formats:
+    comments: "json"
+    users: "json"
+    reports: "markdown"
+  
+  # 自动备份 - 🔴 更频繁的备份
+  auto_backup: true
+  backup_interval: 1800       # 🔴 从 3600 改为 1800 (每30分钟备份)
+  keep_backups: 10            # 🔴 从 5 改为 10 (保留更多备份)
+
+# ==================== 日志配置 ====================
+logging:
+  level: "INFO"               # 使用INFO级别，不要用DEBUG避免日志过多
+  directory: "logs"
+  name: "XiaohongshuScraper"
+  console_output: true
+  file_output: true
+  color_output: true
+  format: "%(asctime)s | %(levelname)-8s | %(name)s | %(message)s"
+  date_format: "%Y-%m-%d %H:%M:%S"
+  max_size: 10485760          # 10MB
+  backup_count: 5
+
+# ==================== 数据分析配置 ====================
+analysis:
+  sentiment:
+    enabled: true
+    language: "zh"
+  
+  keywords:
+    enabled: true
+    top_n: 20
+    min_freq: 3
+  
+  statistics:
+    enabled: true
+    include_charts: true
+  
+  export_format: "markdown"
+
+# ==================== 代理配置(可选) ====================
+proxy:
+  enabled: false              # 如需使用代理，在启动脚本中配置
+  type: "http"
+  host: "127.0.0.1"
+  port: 7890
+  username: ""
+  password: ""
+
+# ==================== 通知配置(可选) ====================
+notification:
+  enabled: false
+  method: "webhook"
+  
+  webhook:
+    url: ""
+    secret: ""
+  
+  events:
+    on_start: false
+    on_complete: true
+    on_error: true
+
+# ==================== 性能配置 ====================
+performance:
+  concurrent:
+    enabled: false            # 🔴 必须保持false（慢速模式不支持并发）
+    max_workers: 1
+  
+  cache:
+    enabled: true
+    cache_dir: "cache"
+    ttl: 86400
+  
+  database:
+    enabled: false
+    type: "sqlite"
+    path: "data/scraper.db"
+
+# ==================== 安全策略配置 🔴 新增 ====================
+safety:
+  # 频率限制
+  rate_limits:
+    max_notes_per_run: 5      # 每次运行最多5个笔记
+    max_notes_per_hour: 10    # 每小时最多10个笔记
+    max_notes_per_day: 30     # 每天最多30个笔记
+    cooldown_after_error: 1800  # 错误后冷却30分钟
+  
+  # 错误处理
+  error_handling:
+    max_consecutive_errors: 3  # 连续3次错误后停止
+    stop_on_banned: true       # 检测到封号立即停止
+    auto_screenshot: true      # 错误时自动截图
+  
+  # 检测与恢复
+  detection:
+    check_login_status: true   # 定期检查登录状态
+    check_interval: 300        # 每5分钟检查一次
+    
+    # 风控检测关键词
+    ban_indicators:
+      - "暂时无法浏览"
+      - "无法查看"
+      - "内容违规"
+      - "账号异常"
+      - "操作频繁"
+
+# ==================== 慢速安全模式说明 ====================
+# 
+# 🎯 本配置特点:
+# ✅ 极低访问频率 - 避免触发风控
+# ✅ 超长等待时间 - 模拟真实用户
+# ✅ 随机行为模拟 - 增加真实性
+# ✅ 智能错误处理 - 快速响应问题
+#
+# 📊 预期效果:
+# - 单次运行: 5个笔记，15-30分钟
+# - 每天运行: 2-3次（间隔4-6小时）
+# - 日收集量: 10-15个笔记
+# - 周收集量: 70-100个笔记
+# - 成功率: 95%+
+# - 封号风险: 极低
+#
+# 📝 使用流程:
+# 1. 运行: start_xiaohongshu_chrome.bat
+# 2. 在Chrome中手动登录小红书
+# 3. 等待4-8小时（如果之前触发过风控）
+# 4. 运行: python main.py
+# 5. 观察日志，确保成功
+# 6. 间隔4-6小时后可再次运行
+#
+# ⚠️  重要提醒:
+# - 首次使用等待8小时后再运行
+# - 每天最多运行3次
+# - 运行间隔至少4小时
+# - 避免高峰期（晚8-11点）
+# - 出现错误立即停止，等待30分钟
+# - 如果连续失败，更换账号或IP
+#
+# 💡 数据目标（学术研究足够）:
+# - 1周: 70-100个笔记
+# - 2周: 150-200个笔记
+# - 1月: 300-500个笔记
+# - 评论数: 200-500条高质量评论
+# - 用户数: 100-200个真实用户
+#
+# 🔥 核心原则:
+# 宁慢勿快 | 宁少勿多 | 质量>数量 | 安全第一
+#
+# ==================== 配置修改记录 ====================
+# 2025-11-02 v2.0 - 慢速安全模式
+# - 笔记数量: 50 → 5
+# - 页面延迟: 3-8秒 → 8-15秒
+# - 新增: 笔记间延迟 60-120秒
+# - 新增: 随机行为配置
+# - 新增: 安全策略配置
+# - 评论数量: 100 → 50
+# - 加载次数: 5 → 3
+# - 重试次数: 3 → 2
+# - 备份间隔: 60分钟 → 30分钟

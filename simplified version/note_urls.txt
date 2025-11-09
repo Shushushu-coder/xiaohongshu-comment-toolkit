@@ -1,0 +1,21 @@
+# 小红书笔记URL列表
+# 每行一个URL，程序会按顺序处理
+# 以 # 开头的行会被忽略
+
+# 示例（请替换为实际URL）：
+# https://www.xiaohongshu.com/explore/66abc12345678901
+# https://www.xiaohongshu.com/explore/66def12345678902
+# https://www.xiaohongshu.com/explore/66ghi12345678903
+
+# 使用方法：
+# 1. 删除上面的示例URL
+# 2. 粘贴你要采集的笔记URL（每行一个）
+# 3. 保存文件
+# 4. 运行 python comment_extractor_optimized.py
+# 5. 选择模式 2
+
+# 提示：
+# - 从小红书笔记页面复制完整URL
+# - URL格式：https://www.xiaohongshu.com/explore/[笔记ID]
+# - 建议每次不超过20个URL
+# - 可以多次运行，分批处理
