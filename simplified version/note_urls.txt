@@ -2,11 +2,6 @@
 # 每行一个URL，程序会按顺序处理
 # 以 # 开头的行会被忽略
 
-# 示例（请替换为实际URL）：
-# https://www.xiaohongshu.com/explore/66abc12345678901
-# https://www.xiaohongshu.com/explore/66def12345678902
-# https://www.xiaohongshu.com/explore/66ghi12345678903
-
 # 使用方法：
 # 1. 删除上面的示例URL
 # 2. 粘贴你要采集的笔记URL（每行一个）
@@ -19,3 +14,24 @@
 # - URL格式：https://www.xiaohongshu.com/explore/[笔记ID]
 # - 建议每次不超过20个URL
 # - 可以多次运行，分批处理
+
+# https://www.xiaohongshu.com/explore/684ffd1d0000000022006842?xsec_token=ABVZNmjKE4tWLkZKn8TPO3-JyD5irrD0u61zltUR_ginE=&xsec_source=pc_search
+#https://www.xiaohongshu.com/explore/68215b3c00000000230143f3?xsec_token=ABbXwu1MQCEDQW8FTMdUAhHOwAfw-Uuh7ciCqhWDDVCBw=&xsec_source=pc_search
+#https://www.xiaohongshu.com/explore/662a33030000000001005b73?xsec_token=ABX7jktwBppGi0UNs67XWNiFbPFyn0OEvBqIy1JAFBZyQ=&xsec_source=pc_search
+#https://www.xiaohongshu.com/explore/68eca7440000000004010601?xsec_token=ABjzw73Itm_nN_U1NoIHJKxPmN6qLwv2lD9B2ecjQaDxc=&xsec_source=pc_search
+#https://www.xiaohongshu.com/explore/67a19df7000000002902a052?xsec_token=ABoQbV0bjbjB_3-pfBSNKctdqxFOWYU-UIdyU6clprWCI=&xsec_source=pc_search
+#https://www.xiaohongshu.com/explore/68823a13000000000d019604?xsec_token=ABKm2vHl7h6wxqaS6e1MmXZub3Ba6bO6LTcja7XDs7A7w=&xsec_source=pc_search
+
+https://www.xiaohongshu.com/explore/68e0ce040000000004001775?xsec_token=ABmXo0gKFGN6FrGHbMfSGBitEm7QztZQ0zEV7iNLrTllo=&xsec_source=pc_search
+https://www.xiaohongshu.com/explore/688e39230000000025013980?xsec_token=ABENgnC44a1xqqFi1OUU7Ck-8kOQwftmZWceNyAfAOqPs=&xsec_source=pc_search
+https://www.xiaohongshu.com/explore/6812fa37000000002002ba80?xsec_token=ABvV0lkDkQ2xAdOrhyUdadKmpYaPSCFTooJW_WlAoeQx8=&xsec_source=pc_search
+https://www.xiaohongshu.com/explore/66c0d63b000000001e019b4e?xsec_token=ABUQoxH6v-UDoKGsUL1U6rMKL0wf38NNW5NqCGfQowtGE=&xsec_source=pc_search
+https://www.xiaohongshu.com/explore/68bbfbb4000000001d01e303?xsec_token=ABM-xa_JYuTiA-W7Z2I7TToK9Rmpcqoa8qQ8v1KGtUHCE=&xsec_source=pc_search
+https://www.xiaohongshu.com/explore/684ffd1d0000000022006842?xsec_token=ABVZNmjKE4tWLkZKn8TPO3-JyD5irrD0u61zltUR_ginE=&xsec_source=pc_search
+
+https://www.xiaohongshu.com/explore/675ce4880000000002027714?xsec_token=ABAk0vYnj7Xz6J3mzfLcc9yC3dzclTifV6pD5YdrIZ4UE=&xsec_source=pc_search
+https://www.xiaohongshu.com/explore/67a07db3000000001800a363?xsec_token=AB_vETKZaJ07zsq6tAUSJUlwNUy2-C8Rvq_W7G9_99-ro=&xsec_source=pc_search
+
+https://www.xiaohongshu.com/explore/684afa050000000021003705?xsec_token=ABbsvVG5Ee8UtfoXqOj8yxzGk7EiJIqJ13S6c7GKj7mlo=&xsec_source=pc_search
+
+https://www.xiaohongshu.com/explore/63da654d000000000d01f3a5?xsec_token=ABNGHJgLHqiH8CgXgArPzct38zn4iw0o6SqqVGjHz95no=&xsec_source=pc_search
