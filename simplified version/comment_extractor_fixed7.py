@@ -1113,7 +1113,7 @@ V6简化版：CSV输出仅包含核心字段
                 })
                 
                 if i < len(urls):
-                    delay = random.randint(30, 60)
+                    delay = random.randint(22, 34)
                     self.log(f"等待 {delay} 秒后处理下一个笔记...", "⏸️")
                     time.sleep(delay)
                 
