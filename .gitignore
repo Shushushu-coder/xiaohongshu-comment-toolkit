@@ -1,27 +1,41 @@
-
-# Python 缓存
+# Python
 __pycache__/
-*.pyc
+*.py[cod]
+*.pyo
+*.pyd
+.Python
 
-# 你的虚拟环境 (scraper)
-scraper/
+# Virtual environments
+/scraper/
 venv/
+env/
 .venv/
+.env/
 
-# 日志文件
-logs/
+# Active runtime data
+/data/
+/data20251118/
+/logs/
+
+# Legacy ignored runtime content
+/legacy/data/
+/legacy/logs/
+/legacy/old_versions/
+
+# Sensitive local configuration
+/legacy/config/config.yaml
+
+# Chrome profile
+**/chrome_profile/
+
+# Runtime output
 *.log
-
-# 所有数据、Cookies、截图和备份
-data/
-simplified version/data
-
-# 敏感的配置文件
-config/config.yaml
-
-# 升级脚本产生的备份文件
 *.backup_*
+interaction_diagnosis.txt
 
-# 旧版本和文件
-old_versions/
-documents/
+# OS and editor
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
