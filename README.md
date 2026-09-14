@@ -69,13 +69,15 @@ scraper.py  ──→  data/comments/comments_*.json
 
 ### 环境要求
 
-```bash
-pip install selenium python-docx
-```
-
-- Python 3.7+
+- Tested with Python 3.10
 - Google Chrome（已安装）
 - ChromeDriver（版本需与 Chrome 匹配）
+
+### 安装依赖
+
+```powershell
+python -m pip install -r requirements.txt
+```
 
 ### 第一步：启动 Chrome 调试模式
 

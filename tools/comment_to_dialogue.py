@@ -417,7 +417,7 @@ def main():
     print("=" * 60)
     
     # 读取数据
-    input_file = 'data\comments\comments.json'
+    input_file = r'data\comments\comments.json'
     print(f"\n读取: {input_file}")
     
     with open(input_file, 'r', encoding='utf-8') as f:
@@ -436,7 +436,7 @@ def main():
     dialogues = converter.convert_all(data)
     
     # 保存
-    output_file = 'data\comment_to_dialogue\dialogues_enhanced.txt'
+    output_file = r'data\comment_to_dialogue\dialogues_enhanced.txt'
     with open(output_file, 'w', encoding='utf-8') as f:
         f.write("评论转对话 - 增强版输出\n")
         f.write("=" * 50 + "\n\n")
@@ -449,7 +449,7 @@ def main():
     report = converter.generate_report(total_comments, dialogues)
     print(report)
     
-    with open('data\comment_to_dialogue\report_enhanced.txt', 'w', encoding='utf-8') as f:
+    with open(r'data\comment_to_dialogue\report_enhanced.txt', 'w', encoding='utf-8') as f:
         f.write(report)
     
     # 示例

@@ -133,9 +133,10 @@ python merge_datasets.py
 
 将真实评论对话与营销对话数据合并，生成 `merged_dataset.jsonl`（可直接用于训练）。
 
-安装依赖：
-```bash
-pip install python-docx
+依赖安装见仓库根目录：
+
+```powershell
+python -m pip install -r requirements.txt
 ```
 
 ---
