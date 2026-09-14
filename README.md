@@ -191,3 +191,7 @@ xiaohongshu-comment-toolkit/
 Use this project only for content you are authorized to access and in accordance with applicable platform terms, laws, research ethics, and privacy requirements.
 
 请仅用于你有权访问的内容，并遵守平台条款、法律法规、研究伦理与隐私要求。
+
+## License
+
+This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
