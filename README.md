@@ -8,14 +8,13 @@
 
 ```
 .
-├── start_xiaohongshu_chrome.bat        # 启动 Chrome 调试模式
-├── comment_extractor_fixed7.py         # 评论采集主脚本（当前推荐，V5.2）
-├── comment_extractor_fixed8_ing.py     # 开发中（V6.0，含增量去重）
-├── diagnose_web.py                     # 页面结构诊断工具
-├── note_urls.txt                       # 批量处理的笔记 URL 列表
-├── VERSIONS.md                         # 版本演进记录与功能对比
-├── 小红书评论爬虫技术路线记录.md
-├── old_version/                        # 历史版本归档（V1.0–V5.1）
+├── start_chrome_debug.bat              # 启动 Chrome 调试模式
+├── scraper.py                          # 评论采集主脚本
+├── diagnose.py                         # 页面结构诊断工具
+├── examples/
+│   └── note_urls.example.txt           # 批量 URL 列表示例
+├── docs/
+│   └── technical-notes.md              # 技术路线说明
 ├── data/                               # 采集与处理输出（已 .gitignore）
 │   ├── comments/                       # 原始评论 JSON/CSV
 │   ├── comment_aggregated/             # 整合后的评论数据
@@ -26,11 +25,11 @@
 └── tools/                              # 数据处理工具
     ├── README.md                       # 工具使用指南
     ├── data_aggregator.py              # 整合分散的评论 JSON
-    ├── comment_to_dialogue_converter_fixed2.py  # 评论转对话格式
+    ├── comment_to_dialogue.py          # 评论转对话格式
     ├── long_comment_extractor.py       # 长评论提取器
-    ├── marketing_dialogue_classifier_fixed1.py  # 营销对话分类
+    ├── marketing_classifier.py         # 营销对话分类
     ├── merge_datasets.py               # 合并多数据源
-    └── merge_and_managemnet/           # 统一格式转换与训练数据准备
+    └── merge_and_management/           # 统一格式转换与训练数据准备
 ```
 
 ---
@@ -43,7 +42,7 @@
 Chrome 调试模式（端口 9222）
         │
         ▼
-comment_extractor_fixed7.py  ──→  data/comments/comments_*.json
+scraper.py  ──→  data/comments/comments_*.json
                                            │
                                            ▼
                                 tools/data_aggregator.py
@@ -53,7 +52,7 @@ comment_extractor_fixed7.py  ──→  data/comments/comments_*.json
                                            │
                   ┌────────────────────────┼────────────────────────┐
                   ▼                        ▼                        ▼
-   comment_to_dialogue_converter   long_comment_extractor   marketing_classifier
+   comment_to_dialogue             long_comment_extractor   marketing_classifier
         （317 组对话）                  （67 条长评论）            （营销分类）
                   └────────────────────────┴────────────────────────┘
                                            │
@@ -80,7 +79,7 @@ pip install selenium python-docx
 
 ### 第一步：启动 Chrome 调试模式
 
-双击运行 `start_xiaohongshu_chrome.bat`，脚本会：
+双击运行 `start_chrome_debug.bat`，脚本会：
 1. 检测并关闭现有 Chrome 进程（可选）
 2. 以 `--remote-debugging-port=9222` 启动 Chrome
 3. 指定独立的用户数据目录，保持登录态
@@ -90,18 +89,28 @@ pip install selenium python-docx
 ### 第二步：采集评论
 
 ```bash
-python comment_extractor_fixed7.py
+python scraper.py
 ```
 
 启动后选择模式：
 - **单篇模式**：处理当前浏览器中已打开的笔记页面
 - **批量模式**：读取 `note_urls.txt`，自动遍历所有 URL
 
-编辑 `note_urls.txt` 配置批量 URL，每行一条，`#` 开头为注释：
+`note_urls.txt` 是本地运行输入，已加入 `.gitignore`，clone 后需要从示例复制：
+
+```powershell
+Copy-Item .\examples\note_urls.example.txt .\note_urls.txt
+```
+
+```bash
+cp examples/note_urls.example.txt note_urls.txt
+```
+
+编辑 `note_urls.txt`，每行填写一个需要处理的小红书笔记 URL。`#` 开头为注释。公开示例见 `examples/note_urls.example.txt`：
 
 ```
-# 格式示例
-https://www.xiaohongshu.com/explore/[笔记ID]?xsec_token=...
+# One Xiaohongshu note URL per line
+https://www.xiaohongshu.com/explore/<NOTE_ID>
 ```
 
 输出保存在 `data/comments/`，每篇笔记生成 `comments_[笔记ID].json` 和对应 CSV。
@@ -121,7 +130,7 @@ python tools/data_aggregator.py
 
 ```bash
 # 提取多轮对话（317 组，适合对话模型、客服机器人）
-python tools/comment_to_dialogue_converter_fixed2.py
+python tools/comment_to_dialogue.py
 
 # 提取长评论（67 条，适合产品分析、用户洞察）
 python tools/long_comment_extractor.py
@@ -179,13 +188,7 @@ c：我也觉得有效果
 
 ## 版本说明
 
-| 文件 | 版本 | 状态 | 说明 |
-|------|------|------|------|
-| `old_version/comment_extractor_fixed1~6.py` | V2.0–V5.1 | 归档 | 历史迭代版本 |
-| `comment_extractor_fixed7.py` | V5.2 | **当前推荐** | 稳定版，XPath 精确定位 |
-| `comment_extractor_fixed8_ing.py` | V6.0 | 开发中 | 增量去重，代码精简 36% |
-
-完整版本演进记录与功能对比见 [VERSIONS.md](VERSIONS.md)。
+当前正式采集入口为 `scraper.py`。技术说明见 [docs/technical-notes.md](docs/technical-notes.md)。
 
 ---
 
@@ -193,5 +196,5 @@ c：我也觉得有效果
 
 - 运行期间**不要关闭**调试模式的 Chrome 窗口
 - 批量爬取建议每批不超过 20 个 URL，两批之间适当间隔
-- 小红书页面结构可能随版本更新变化，如遇元素定位失败可运行 `diagnose_web.py` 诊断
+- 小红书页面结构可能随版本更新变化，如遇元素定位失败可运行 `diagnose.py` 诊断
 - 本工具仅供学习研究使用，请遵守小红书用户协议及相关法律法规

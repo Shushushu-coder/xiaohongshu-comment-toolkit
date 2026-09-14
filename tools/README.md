@@ -15,11 +15,11 @@ data/comments/comments_*.json   (爬虫输出)
          ▼
   data/comment_aggregated/comments.json
          │
-         ├──→ comment_to_dialogue_converter_fixed2.py  →  对话格式（问答对）
+         ├──→ comment_to_dialogue.py  →  对话格式（问答对）
          │
          ├──→ long_comment_extractor.py                →  长评论格式（深度评测）
          │
-         └──→ marketing_dialogue_classifier_fixed1.py  →  营销对话分类
+         └──→ marketing_classifier.py  →  营销对话分类
                       │
                       ▼
               merge_datasets.py  合并真实评论 + 营销数据 → 最终训练集
@@ -32,12 +32,12 @@ data/comments/comments_*.json   (爬虫输出)
 | 脚本 | 输入 | 输出 | 用途 |
 |------|------|------|------|
 | `data_aggregator.py` | `data/comments/comments_*.json` | `comments.json` + `titles.json` + `metadata.json` | 整合分散的评论文件 |
-| `comment_to_dialogue_converter_fixed2.py` | `comments.json` | `converted_dialogues.txt` | 评论转对话格式 ⭐推荐 |
+| `comment_to_dialogue.py` | `comments.json` | `converted_dialogues.txt` | 评论转对话格式 ⭐推荐 |
 | `long_comment_extractor.py` | `comments.json` | `long_comments_full.txt` + `long_comments_top50.txt` | 提取长评论 |
-| `marketing_dialogue_classifier_fixed1.py` | 对话数据 | 分类后的营销对话 | 营销场景分类 |
+| `marketing_classifier.py` | 对话数据 | 分类后的营销对话 | 营销场景分类 |
 | `merge_datasets.py` | 营销对话 + 真实评论对话 | `merged_dataset.jsonl` | 合并多数据源 |
-| `merge_and_managemnet/prepare_dialogue_generation.py` | `unified_all.jsonl` | 任务专用数据集 | 准备模型训练数据 |
-| `merge_and_managemnet/real_marketing_data_merge_data_convertor.py` | 多源数据 | `unified_all.jsonl` | 统一格式转换 |
+| `merge_and_management/prepare_dialogue_generation.py` | `unified_all.jsonl` | 任务专用数据集 | 准备模型训练数据 |
+| `merge_and_management/real_marketing_data_merge_data_convertor.py` | 多源数据 | `unified_all.jsonl` | 统一格式转换 |
 
 ---
 
@@ -59,7 +59,7 @@ python data_aggregator.py
 ### 第二步A：转换为对话格式（推荐用于 AI 训练）
 
 ```bash
-python comment_to_dialogue_converter_fixed2.py
+python comment_to_dialogue.py
 ```
 
 **三种提取策略**，合计从 1163 条评论中提取 317 组对话（转换率 27.3%）：
@@ -159,7 +159,7 @@ pip install python-docx
 
 ### 统一 JSONL 格式（推荐用于训练）
 
-由 `merge_and_managemnet/real_marketing_data_merge_data_convertor.py` 生成：
+由 `merge_and_management/real_marketing_data_merge_data_convertor.py` 生成：
 
 ```json
 {
@@ -201,7 +201,7 @@ pip install python-docx
 
 ```bash
 # 准备对话生成训练数据（instruction 格式）
-python merge_and_managemnet/prepare_dialogue_generation.py \
+python merge_and_management/prepare_dialogue_generation.py \
     --input converted_data/by_type/dialogues.jsonl \
     --output tasks/dialogue_generation \
     --format instruction \
@@ -223,4 +223,4 @@ python merge_and_managemnet/prepare_dialogue_generation.py \
 
 1. **路径配置**：脚本内有部分硬编码路径（如 `/mnt/user-data/uploads/`），使用前需按实际路径修改
 2. **数据隐私**：真实评论数据已进行品牌替换脱敏，商业使用需确认授权
-3. `comment_to_dialogue_converter.py`（原始版）和 `comment_to_dialogue_converter_fixed1_待修复.py` 为旧版本，请使用 `fixed2.py`
+3. 对话转换请使用 `comment_to_dialogue.py`

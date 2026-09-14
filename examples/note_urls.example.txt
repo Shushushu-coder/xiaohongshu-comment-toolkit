@@ -1,0 +1,5 @@
+# One Xiaohongshu note URL per line
+# Lines starting with # are ignored
+# Copy this file to note_urls.txt in the repository root for local runs
+
+https://www.xiaohongshu.com/explore/<NOTE_ID>

@@ -17,13 +17,11 @@ env/
 /data20251118/
 /logs/
 
-# Legacy ignored runtime content
-/legacy/data/
-/legacy/logs/
-/legacy/old_versions/
+# Local archive / historical development files
+/archive/
 
-# Sensitive local configuration
-/legacy/config/config.yaml
+# Local runtime URL input (tracked example: examples/note_urls.example.txt)
+/note_urls.txt
 
 # Chrome profile
 **/chrome_profile/

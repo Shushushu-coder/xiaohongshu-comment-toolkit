@@ -1,4 +1,4 @@
-这份《小红书爬虫技术路线记录》基于你提供的四个核心代码文件（`start_xiaohongshu_chrome.bat`, `comment_extractor_fixed8.py`, `diagnose_web.py`, `data_aggregator.py`）整理而成。它总结了从环境搭建、数据采集、页面分析到数据清洗的完整技术栈。
+这份《小红书爬虫技术路线记录》基于你提供的四个核心代码文件（`start_chrome_debug.bat`, `scraper.py`, `diagnose.py`, `data_aggregator.py`）整理而成。它总结了从环境搭建、数据采集、页面分析到数据清洗的完整技术栈。
 
 ------
 
@@ -27,7 +27,7 @@
 
 
 
-## 2. 数据采集模块 (`comment_extractor_fixed8.py`)
+## 2. 数据采集模块 (`scraper.py`)
 
 这是爬虫的核心执行单元，目前迭代至 V6 版本，主要改进了增量爬取和稳定性。
 
@@ -59,7 +59,7 @@
 
 
 
-## 3. 页面分析与逆向诊断 (`diagnose_web.py`)
+## 3. 页面分析与逆向诊断 (`diagnose.py`)
 
 
 
@@ -96,7 +96,7 @@
 
 1. 环境启动：
 
-   运行 start_xiaohongshu_chrome.bat，清理旧进程并启动调试版 Chrome 3333。
+   运行 start_chrome_debug.bat，清理旧进程并启动调试版 Chrome 3333。
 
 2. 人工介入：
 
@@ -104,7 +104,7 @@
 
 3. 数据采集：
 
-   运行 comment_extractor_fixed8.py。
+   运行 scraper.py。
 
    - *单篇模式：* 处理当前浏览器标签页。
    - *批量模式：* 读取 `note_urls.txt` 自动遍历，利用历史记录跳过已爬取内容。
@@ -122,4 +122,4 @@
 
 
 - **登录态保活：** 目前依赖人工登录，未来可结合 Cookie 注入实现自动化。
-- **更多维度数据：** 根据 `diagnose_web.py` 的发现，可以进一步解析 `interactInfo` 中的完整数据结构，获取更精确的互动指标。
+- **更多维度数据：** 根据 `diagnose.py` 的发现，可以进一步解析 `interactInfo` 中的完整数据结构，获取更精确的互动指标。

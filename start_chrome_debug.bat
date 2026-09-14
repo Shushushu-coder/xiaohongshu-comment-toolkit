@@ -38,7 +38,7 @@ echo.
 echo 首次使用时，请在打开的 Chrome 窗口中登录小红书。
 echo.
 echo 然后在仓库根目录运行：
-echo python comment_extractor_fixed7.py
+echo python scraper.py
 exit /b 0
 
 :devtools_ready
@@ -47,7 +47,7 @@ echo [信息] 已检测到有效的 Chrome DevTools 服务，端口：9222
 echo [信息] 无需重复启动 Chrome。
 echo.
 echo 请在仓库根目录运行：
-echo python comment_extractor_fixed7.py
+echo python scraper.py
 exit /b 0
 
 :port_conflict
