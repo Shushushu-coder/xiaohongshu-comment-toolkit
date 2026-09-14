@@ -1,125 +1,116 @@
-这份《小红书爬虫技术路线记录》基于你提供的四个核心代码文件（`start_chrome_debug.bat`, `scraper.py`, `diagnose.py`, `data_aggregator.py`）整理而成。它总结了从环境搭建、数据采集、页面分析到数据清洗的完整技术栈。
+# Technical Notes
 
-------
+Current implementation notes for the live toolkit. Paths and filenames below match the code defaults.
 
+## Architecture
 
+The project is a comment-collection script plus local processing tools:
 
-# 小红书评论爬虫技术路线记录
+- `start_chrome_debug.bat` starts or reuses a user-owned Chrome instance with remote debugging on port `9222` and a project-local profile at `data/chrome_profile`.
+- `scraper.py` and `diagnose.py` attach to that instance with Selenium (`debuggerAddress=127.0.0.1:9222`).
+- Collection writes per-note files under `data/comments/`.
+- `tools/` transforms those files. The live path is aggregation → dialogue conversion → dataset merge. Analysis scripts and `tools/merge_and_management/` are separate.
 
+There is no package CLI, no headless browser launcher in the live path, and no crawl-history service.
 
+## Browser Connection Strategy
 
-版本： V8 (Fixed8 - Anti-Duplicate)
+`start_chrome_debug.bat` (Windows):
 
-核心策略： Chrome 调试协议 (CDP)接管 + Selenium 自动化 + 正则/DOM 混合解析
+1. Probes `http://127.0.0.1:9222/json/version` for a valid Chrome DevTools browser websocket.
+2. If DevTools is already up, it does not launch another Chrome.
+3. If port `9222` is occupied without a valid DevTools endpoint, it exits with an error and does not kill processes.
+4. Otherwise it locates `chrome.exe` in common install paths and starts Chrome with `--remote-debugging-port=9222` and `--user-data-dir` pointing at `data/chrome_profile`.
 
+Python then attaches to that session. Login happens in the browser, not in the scripts. The profile directory keeps the session across runs of the launcher.
 
+## Data Collection Flow
 
-## 1. 核心架构与反爬策略
+`scraper.py` is interactive (`python scraper.py`):
 
+1. Optional debug logging.
+2. Mode: current tab, URLs from repository-root `note_urls.txt`, or URLs typed in the terminal.
+3. Attach to Chrome.
+4. For each note: wait for render, collect note metadata, scroll and expand long comments / nested replies, extract comment items, write files.
 
+Note metadata uses the page title, JSON-like strings in page source, and CSS/XPath fallbacks.
 
-本项目放弃了传统的全自动无头浏览器模式，采用了**“人工登录 + 脚本接管”**的半自动化策略，以最大程度规避小红书的滑块验证码和风控机制。
+Comment extraction:
 
-- **Chrome 调试模式接管：**
-  - 通过批处理脚本启动 Chrome，指定 `--remote-debugging-port=9222` 参数开启远程调试端口 1。
-  - 指定 `--user-data-dir` 用户数据目录，实现“一次登录，持久保持”，脚本运行时无需再次扫码登录 22。
-  - Python 脚本通过 `debuggerAddress="127.0.0.1:9222"` 接管该浏览器实例，直接操作已渲染的页面。
+- Tries CSS selectors such as `div[class*='comment-item']`.
+- Reads username, content, relative time, and like count from each element.
+- Deduplicates by `username` plus a content prefix.
+- Stores a flat list. There is no `replies` / `sub_comments` field in the written JSON; nested replies that become visible after expansion are extracted as additional items when they match the comment selectors.
 
+`note_urls.txt` is a local ignored input. The tracked template is `examples/note_urls.example.txt`. Lines must start with `http`; `#` comments are skipped.
 
+`diagnose.py` attaches the same way, scans the current page source for like / collect / comment count patterns, and writes `interaction_diagnosis.txt` at the repository root.
 
-## 2. 数据采集模块 (`scraper.py`)
+## Data Processing Pipeline
 
-这是爬虫的核心执行单元，目前迭代至 V6 版本，主要改进了增量爬取和稳定性。
+Live path (defaults):
 
+1. `tools/data_aggregator.py` reads `data/comments/comments_*.json` (or a directory typed at the prompt) and writes `data/aggregated/comments.json`, plus sidecar `titles.json` and `metadata.json`.
+2. `tools/comment_to_dialogue.py` reads `data/aggregated/comments.json` and writes `data/comment_to_dialogue/dialogues_enhanced.txt` (and `report_enhanced.txt`).
+3. `tools/merge_datasets.py` reads `data/marketing/营销对话数据.docx` and `dialogues_enhanced.txt`, then writes `data/merged_dataset.jsonl` (and `.json` / `.txt`).
 
+Aggregator length is computed after stripping a `回复…：` / `回复…:` prefix; the stored `content` is unchanged. `replies` is copied only if the source JSON already has `replies` or `sub_comments`.
 
-### 2.1 功能特性
+Optional, not on the live path:
 
+- `tools/long_comment_extractor.py` → `data/comment_to_single/`
+- `tools/marketing_classifier.py` → `data/marketing/` (same DOCX as merge, not a merge input)
 
+`tools/merge_and_management/` is a snapshot converter. It defaults to `data/all_data_20251121/` and filenames such as `real_dialogues.txt`. It does not read live pipeline outputs.
 
-- **增量爬取机制（防重复）：** 引入 `CrawlHistory` 类，通过 `data/crawl_history.json` 记录已爬取的笔记 ID 和时间。批量任务运行时会自动跳过历史记录，支持 `--force` 参数强制重爬。
-- **智能滚动加载：** 实现 `smart_scroll_to_comments` 和 `load_all_comments_with_expansion`，通过检测页面高度变化判断加载状态，并自动点击“展开/更多”按钮以获取完整长评。
-- **混合提取策略 (V6 Method)：**
-  - 优先尝试 XPath/CSS 选择器定位 DOM 元素。
-  - 若 DOM 定位失败，回退使用正则表达式直接从 `outerHTML` 或页面源码中提取 JSON 数据（如 `noteTitle`, `nickname` 等）。
+## Output Artifacts
 
+| Path | Writer |
+|------|--------|
+| `data/comments/comments_{note_id}_{timestamp}_v6.json` | `scraper.py` |
+| `data/comments/comments_{note_id}_{timestamp}_v6.csv` | `scraper.py` |
+| `data/comments/summary_{timestamp}_v6.txt` | `scraper.py` |
+| `data/aggregated/comments.json` | `data_aggregator.py` |
+| `data/comment_to_dialogue/dialogues_enhanced.txt` | `comment_to_dialogue.py` |
+| `data/merged_dataset.jsonl` | `merge_datasets.py` |
 
+The `_v6` suffix is part of the current collection filename. JSON also stores `"version": "V6"`. That is the on-disk contract, not a separate architecture.
 
-### 2.2 数据字段
+Collection JSON shape (fields the scraper writes):
 
-
-
-采集的数据保存为 CSV 和 JSON 双份，字段包括：
-
-- `comment_id`: 唯一标识符
-- `username`: 用户昵称
-- `content`: 评论内容（含长度统计）
-- `likes`: 点赞数
-- `time`: 发布时间
-
-
-
-## 3. 页面分析与逆向诊断 (`diagnose.py`)
-
-
-
-为了解决动态页面元素定位困难的问题，开发了专门的诊断工具，用于分析小红书页面源码中的隐藏数据结构。
-
-- **多维数据源探测：** 工具会同时扫描以下路径查找互动数据（点赞、收藏、评论数）：
-  1. **页面 JSON 数据对象：** 扫描源码中的 `"interactInfo"`, `"likedCount"`, `"collectedCount"` 等 JSON 键值对。
-  2. **文本内容匹配：** 匹配“点赞 100”、“收藏 50”等可见文本。
-  3. **CSS 选择器：** 尝试通过 `.interact`, `.engagement` 等类名获取 DOM 元素文本。
-- **辅助决策：** 诊断报告会输出去重后的数值建议，帮助开发者确定在当前页面版本中最可靠的提取规则。
-
-
-
-## 4. 数据清洗与整合 (`data_aggregator.py`)
-
-
-
-在采集完成后，使用整合工具将分散的 JSON 文件合并为结构化数据集。
-
-- **数据清洗 (ETL)：**
-  - **回复前缀清洗：** 使用正则 `re.sub(r'回复.*?[：:]', '', content)` 移除评论内容中的“回复 用户名：”前缀。特别注意兼容了中文冒号 (`：`) 和英文冒号 (`:`)，并去除首尾空格以计算准确的文本长度。
-- **结构化输出：**
-  1. `comments.json`: 按 `post_id` 分组的完整评论树（含回复关系）。
-  2. `titles.json`: 笔记 ID 到标题的映射表，用于快速索引。
-  3. `metadata.json`: 包含统计信息（总赞数、平均评论长度）和按热度排序的帖子列表。
-
-
-
-## 5. 标准工作流 (Workflow)
-
-
-
-根据现有代码文件，标准的操作流程如下：
-
-1. 环境启动：
-
-   运行 start_chrome_debug.bat，清理旧进程并启动调试版 Chrome 3333。
-
-2. 人工介入：
-
-   在打开的 Chrome 窗口中手动登录小红书账号 4。
-
-3. 数据采集：
-
-   运行 scraper.py。
-
-   - *单篇模式：* 处理当前浏览器标签页。
-   - *批量模式：* 读取 `note_urls.txt` 自动遍历，利用历史记录跳过已爬取内容。
-
-4. 数据整合：
-
-   运行 data_aggregator.py，扫描 data/raw/comments 或指定目录，生成清洗后的最终数据文件。
-
-------
-
-
-
-### 下一步优化方向 (Based on Analysis)
-
-
-
-- **登录态保活：** 目前依赖人工登录，未来可结合 Cookie 注入实现自动化。
-- **更多维度数据：** 根据 `diagnose.py` 的发现，可以进一步解析 `interactInfo` 中的完整数据结构，获取更精确的互动指标。
+```json
+{
+  "note_info": {
+    "note_id": "",
+    "note_title": "",
+    "note_url": "",
+    "author": "",
+    "publish_time": "",
+    "likes": 0,
+    "collects": 0
+  },
+  "comment_count": 0,
+  "collected_at": "",
+  "version": "V6",
+  "comments": [
+    {
+      "comment_id": "comment_1",
+      "username": "",
+      "content": "",
+      "time": "",
+      "likes": 0,
+      "collected_at": ""
+    }
+  ]
+}
+```
+
+## Known Limitations
+
+- Page markup and embedded JSON keys can change; selectors and regexes then need updates.
+- Content that requires login is only available in an authenticated Chrome session.
+- Tested with Python 3.10, Windows, and Google Chrome.
+- No crawl-history skip, no `--force`, no CLI flags on the live collection/aggregation scripts.
+- Collection output is a flat comment list.
+- `merge_datasets.py` fails if the marketing DOCX is missing.
+- Snapshot utilities keep their own directory and filenames; do not treat them as the live pipeline.
