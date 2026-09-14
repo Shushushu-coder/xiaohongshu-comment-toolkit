@@ -1,43 +1,73 @@
 # tools/ 使用指南
 
-数据处理流水线工具集，将原始爬虫输出转换为可用于模型训练的结构化数据集。
+数据处理工具集。默认路径以各脚本代码为准；文档与代码冲突时以代码为准。
 
----
-
-## 整体流程
+工具分成三条线，不要当成必须串行的一条流水线：
 
 ```
-data/comments/comments_*.json   (爬虫输出)
+Core collection
+data/comments/comments_{note_id}_{timestamp}_v6.json   (scraper 输出)
          │
          ▼
-  data_aggregator.py            整合、清洗多个 JSON 文件
+  data_aggregator.py
          │
          ▼
   data/aggregated/comments.json
          │
-         ├──→ comment_to_dialogue.py  →  对话格式（问答对）
+         ▼
+  comment_to_dialogue.py
          │
-         ├──→ long_comment_extractor.py                →  长评论格式（深度评测）
+         ▼
+  data/comment_to_dialogue/dialogues_enhanced.txt
          │
-         └──→ marketing_classifier.py  →  营销对话分类
-                      │
-                      ▼
-              merge_datasets.py  合并真实评论 + 营销数据 → 最终训练集
+         ▼
+  merge_datasets.py  ←  另读 data/marketing/营销对话数据.docx
+         │
+         ▼
+  data/merged_dataset.jsonl  (+ .json / .txt)
+
+Optional analysis
+  long_comment_extractor.py     读取 aggregated/comments.json
+                                写出 data/comment_to_single/long_comments_*.txt
+  marketing_classifier.py       读取营销 DOCX
+                                写出 data/marketing/marketing_*.txt
+
+Optional snapshot conversion
+  merge_and_management/*        读取 data/all_data_20251121/ 下的约定文件名
+                                不自动消费上面的 live 输出
 ```
+
+---
+
+## Canonical artifacts
+
+跨工具只使用下列默认名。历史名 `converted_dialogues.txt` 不是当前正式输出。
+
+| Artifact | Producer | Consumer |
+|----------|----------|----------|
+| `data/comments/comments_{note_id}_{timestamp}_v6.json` | `scraper.py` | `data_aggregator.py`（glob：`comments_*.json`） |
+| `data/aggregated/comments.json` | `data_aggregator.py` | `comment_to_dialogue.py`、`long_comment_extractor.py` |
+| `data/comment_to_dialogue/dialogues_enhanced.txt` | `comment_to_dialogue.py` | `merge_datasets.py` |
+| `data/marketing/营销对话数据.docx` | 外部放入 | `merge_datasets.py`、`marketing_classifier.py` |
+| `data/merged_dataset.jsonl` | `merge_datasets.py` | 终端产物（无代码消费者） |
+
+侧车输出（有 producer、无正式 live consumer）：scraper 的 CSV / `summary_*.txt`；aggregator 的 `titles.json` / `metadata.json`；`report_enhanced.txt`；`long_comments_full.txt` / `long_comments_top50.txt` / `long_comments_report.txt`；`marketing_dialogues.txt` / `marketing_narratives_full.txt` / `marketing_narratives_top50.txt` / `marketing_classification_report.txt`；`merged_dataset.json` / `merged_dataset.txt`（`merged_dataset.jsonl` 是 merge 的 canonical 终端产物，同样无代码消费者）。
 
 ---
 
 ## 工具说明
 
-| 脚本 | 输入 | 输出 | 用途 |
-|------|------|------|------|
-| `data_aggregator.py` | `data/comments/comments_*.json` | `comments.json` + `titles.json` + `metadata.json` | 整合分散的评论文件 |
-| `comment_to_dialogue.py` | `comments.json` | `converted_dialogues.txt` | 评论转对话格式 ⭐推荐 |
-| `long_comment_extractor.py` | `comments.json` | `long_comments_full.txt` + `long_comments_top50.txt` | 提取长评论 |
-| `marketing_classifier.py` | 对话数据 | 分类后的营销对话 | 营销场景分类 |
-| `merge_datasets.py` | 营销对话 + 真实评论对话 | `merged_dataset.jsonl` | 合并多数据源 |
-| `merge_and_management/prepare_dialogue_generation.py` | `unified_all.jsonl` | 任务专用数据集 | 准备模型训练数据 |
-| `merge_and_management/real_marketing_data_merge_data_convertor.py` | 多源数据 | `unified_all.jsonl` | 统一格式转换 |
+| 脚本 | 分类 | 默认输入 | 默认输出 | 用途 |
+|------|------|----------|----------|------|
+| `data_aggregator.py` | 主路径 | `data/comments/comments_*.json` | `data/aggregated/comments.json` + `titles.json` + `metadata.json` | 把 scraper 单篇 JSON 整合成按帖子分组的 `comments.json` |
+| `comment_to_dialogue.py` | 主路径 | `data/aggregated/comments.json` | `data/comment_to_dialogue/dialogues_enhanced.txt` | 评论转 a/b/c 对话文本 |
+| `merge_datasets.py` | 主路径 | 营销 DOCX + `dialogues_enhanced.txt` | `data/merged_dataset.jsonl` / `.json` / `.txt` | 合并营销对话与真实评论对话 |
+| `long_comment_extractor.py` | 可选分析 | `data/aggregated/comments.json` | `data/comment_to_single/long_comments_full.txt` 等 | 提取长评论；无 live 下游 |
+| `marketing_classifier.py` | 可选分析 | `data/marketing/营销对话数据.docx` | `marketing_dialogues.txt`、`marketing_narratives_*.txt` | 把营销 DOCX 拆成多轮对话 / 长叙述 |
+| `merge_and_management/real_marketing_data_merge_data_convertor.py` | 快照转换 | `data/all_data_20251121/{real_dialogues,marketing_dialogues,real_narratives_full,marketing_narratives_full}.txt` | `converted_data/unified_all.jsonl` 等 | 将快照目录中的 txt 转为统一 JSONL |
+| `merge_and_management/prepare_dialogue_generation.py` | 快照转换 | `--input` JSONL（无默认） | `--output` 目录 | 把 convertor 的对话 JSONL 转成训练任务格式 |
+
+`diagnose.py` 在仓库根目录，属于页面诊断工具，不进入数据 pipeline。
 
 ---
 
@@ -49,29 +79,32 @@ data/comments/comments_*.json   (爬虫输出)
 python tools\data_aggregator.py
 ```
 
+扫描 `data/comments/comments_*.json`（匹配 scraper 的 `comments_{id}_{timestamp}_v6.json`）。
+
 输出到 `data/aggregated/`：
-- `comments.json` — 按帖子 ID 分组，含回复树结构
-- `titles.json` — 笔记 ID → 标题映射
+- `comments.json` — `{post_id: [ {comment_id, username, content, length, likes, replies?} ]}`
+- `titles.json` — 笔记 ID → 标题
 - `metadata.json` — 统计信息、热度排序
 
-数据清洗说明：使用正则 `re.sub(r'回复.*?[：:]', '', content)` 移除"回复 用户名："前缀，兼容中英文冒号。
+`comments.json` 里的 `length` 用正则 `re.sub(r'回复.*?[：:]', '', content)` 去掉回复前缀后再计算；`content` 字段仍保留原文。scraper 当前不写 `replies` / `sub_comments`，这些字段只在源 JSON 已有时透传。
 
-### 第二步A：转换为对话格式（推荐用于 AI 训练）
+### 第二步A：转换为对话格式（主路径）
 
 ```powershell
 python tools\comment_to_dialogue.py
 ```
 
-**三种提取策略**，合计从 1163 条评论中提取 317 组对话（转换率 27.3%）：
+读取 `data/aggregated/comments.json`，写出：
 
-| 策略 | 原理 | 贡献量 |
-|------|------|--------|
-| 明确回复链 | 识别"回复 XXX ："格式，BFS 构建对话树 | 132 组 (41.6%) |
-| 关键词聚类 | 将提到相同关键词的评论聚为一组 | 59 组 (18.6%) |
-| 智能问答配对 | 为高质量独立评论生成匹配问题 | 163 组 (51.4%) |
+- `data/comment_to_dialogue/dialogues_enhanced.txt`
+- `data/comment_to_dialogue/report_enhanced.txt`（报告，无消费者）
 
-输出示例：
+文本结构：
+
 ```
+评论转对话 - 增强版输出
+==================================================
+
 【对话 1】
 a：会不会长痘?
 b：我乳化了用也没见长痘 你要不试试？
@@ -82,7 +115,7 @@ b：用了两个月，白了很多
 c：我也觉得有效果
 ```
 
-品牌/产品名自动替换为占位符（A=产品名、B=品牌名、C=活动、D=平台）。
+编码 UTF-8。品牌/产品名替换为占位符（A=产品名、B=品牌名、C=活动、D=平台）。
 
 自定义参数：
 ```python
@@ -90,36 +123,23 @@ converter = EnhancedCommentConverter(mode='strict')    # 高质量，少数量
 converter = EnhancedCommentConverter(mode='balanced')  # 默认
 converter = EnhancedCommentConverter(mode='loose')     # 大数量
 
-converter.min_turns = 2                # 最少对话轮数
-converter.similarity_threshold = 0.85 # 去重相似度阈值
+converter.min_turns = 2
+converter.similarity_threshold = 0.85
 ```
 
-### 第二步B：提取长评论（推荐用于产品分析）
+### 第二步B：提取长评论（可选，用于产品分析）
 
 ```powershell
 python tools\long_comment_extractor.py
 ```
 
-默认读取 `data/comments/comments.json`，输出到 `data/comment_to_single/`。
+读取 `data/aggregated/comments.json`，输出到 `data/comment_to_single/`：
 
-从 1163 条评论中筛选 67 条长评论（提取率 5.8%），按质量评分排序。
+- `long_comments_full.txt`
+- `long_comments_top50.txt`
+- `long_comments_report.txt`
 
-自动提取的结构化信息：
-- 肤质（油皮 / 干皮 / 混合 / 敏感肌）
-- 使用时长、价格、功效、质地、适用季节
-
-输出示例：
-```
-【评论 1】质量分: 60.0
-标签: 好评, 产品评测, 热门
-关键信息: 肤质：混干 | 功效：美白/补水
-
-【原文】
-混干，只用了光感水和美白奶罐，个人觉得补水还不错...
-
-【品牌替换后】
-混干，只用了A3和A2，个人觉得补水还不错...
-```
+当前没有正式工具读取这些文件。`merge_and_management` 快照转换期望的是 `real_narratives_full.txt`，不会自动消费本工具输出。
 
 自定义参数：
 ```python
@@ -127,17 +147,17 @@ extractor = LongCommentExtractor(min_length=50)   # 默认50字
 extractor = LongCommentExtractor(min_length=100)  # 更精选
 ```
 
-### 第三步：合并数据集
+### 第三步：合并数据集（主路径）
 
 ```powershell
 python tools\merge_datasets.py
 ```
 
-将真实评论对话与营销对话数据合并，生成 `data/merged_dataset.jsonl`（可直接用于训练）。
-
 默认读取：
 - `data/marketing/营销对话数据.docx`
-- `data/comment_to_dialogue/converted_dialogues.txt`
+- `data/comment_to_dialogue/dialogues_enhanced.txt`
+
+写出 `data/merged_dataset.jsonl`、`.json`、`.txt`。
 
 依赖安装见仓库根目录：
 
@@ -147,26 +167,59 @@ python -m pip install -r requirements.txt
 
 ---
 
+## 可选：营销分类
+
+```powershell
+python tools\marketing_classifier.py
+```
+
+默认读取 `data/marketing/营销对话数据.docx`，在同一目录写出：
+
+- `marketing_dialogues.txt`
+- `marketing_narratives_full.txt`
+- `marketing_narratives_top50.txt`
+- `marketing_classification_report.txt`
+
+这与 `merge_datasets.py` 是并行消费同一 DOCX，不是 merge 的前置步骤。
+
+分类 txt 的文件名与 `real_marketing_data_merge_data_convertor.py` 期望的 `marketing_dialogues.txt` / `marketing_narratives_full.txt` 一致，但默认目录不同（`data/marketing/` vs `data/all_data_20251121/`）。要把它们送进快照转换，需要手动复制到快照目录，并另外准备 `real_dialogues.txt` / `real_narratives_full.txt`。不要改 live 输出名去迁就快照目录。
+
+---
+
 ## 两种提取工具对比
 
 | 特性 | 对话提取器 | 长评论提取器 |
 |------|-----------|------------|
 | 提取对象 | 多人对话链 | 单人长评论 |
-| 输出数量 | 317 组 | 67 条 |
-| 平均长度 | 2–3 轮 | 50–200 字 |
 | 数据格式 | a/b/c 问答 | 段落 + 结构分析 |
-| 信息密度 | ⭐⭐⭐ | ⭐⭐⭐⭐⭐ |
-| 适用场景 | AI训练 / FAQ / 客服 | 产品分析 / 用户洞察 / 营销素材 |
-
-**同时使用两者可获得最完整的数据覆盖。**
+| 是否进入 merge_datasets | 是 | 否 |
+| 适用场景 | 对话合并 / 训练文本 | 产品分析 / 用户洞察 |
 
 ---
 
-## 数据组织与训练格式
+## 快照转换与训练格式（独立 workflow）
 
-### 统一 JSONL 格式（推荐用于训练）
+`merge_and_management/` 面向已经整理好的快照目录，默认：
 
-由 `merge_and_management/real_marketing_data_merge_data_convertor.py` 生成：
+```
+data/all_data_20251121/
+  real_dialogues.txt
+  marketing_dialogues.txt
+  real_narratives_full.txt
+  marketing_narratives_full.txt
+```
+
+```powershell
+python tools\merge_and_management\real_marketing_data_merge_data_convertor.py
+```
+
+默认输出 `data/all_data_20251121/converted_data/`：
+
+- `unified_all.jsonl`
+- `by_type/dialogues.jsonl`、`by_type/narratives.jsonl`
+- `by_source/`、`by_quality/`、`dataset/`、`statistics.json`
+
+统一 JSONL 记录形状（由 convertor 生成，与 `merged_dataset.jsonl` 的 schema 不同）：
 
 ```json
 {
@@ -180,60 +233,32 @@ python -m pip install -r requirements.txt
     ]
   },
   "metadata": {
-    "quality_score": 60,
     "turn_count": 2,
-    "sentiment": "neutral",
-    "tags": ["使用体验"],
-    "length": 28
+    "participant_count": 2,
+    "total_length": 28
   }
 }
 ```
 
-数据总览（合并后）：
+`merge_datasets.py` 的 JSONL 是另一套字段：`id` / `dialogue` / `type` / `source` / `label`。两套训练集不要混用默认路径。
 
-| 类型 | 真实评论 | 营销内容 | 合计 |
-|------|---------|---------|------|
-| 对话 | 317 组 | 245 组 | 562 组 |
-| 长叙述 | 67 条 | 70 条 | 137 条 |
-| **总计** | **384** | **315** | **699** |
+准备对话生成任务数据：
 
-### 针对不同训练任务的数据选择
-
-| 训练任务 | 推荐数据 | 说明 |
-|---------|---------|------|
-| 对话生成 / 客服机器人 | 全部 562 组对话 | 混合真实+营销，50:50 |
-| 营销文案生成 | 营销长叙述（70条）+ 营销对话 | 营销数据为主 |
-| 情感分析 | 真实评论长叙述（67条）| 仅真实数据，已有情感标注 |
-| 全面训练 | 全部 699 条 | 过滤质量分 < 30 的数据 |
-
-```bash
-# 准备对话生成训练数据（instruction 格式）
-python tools\merge_and_management\prepare_dialogue_generation.py \
-    --input converted_data/by_type/dialogues.jsonl \
-    --output tasks/dialogue_generation \
-    --format instruction \
+```powershell
+python tools\merge_and_management\prepare_dialogue_generation.py `
+    --input data\all_data_20251121\converted_data\by_type\dialogues.jsonl `
+    --output data\all_data_20251121\tasks\dialogue_generation `
+    --format instruction `
     --context-window 3
 ```
 
-支持的格式：`single_turn`、`instruction`（Alpaca/Vicuna/ChatGLM）、`chat`（GPT/Claude/Llama-2-Chat）
-
-### 数据质量建议
-
-- **高质量**（score ≥ 70）：188 条，用于主要训练
-- **中质量**（40–69）：96 条，补充训练
-- **低质量**（< 40）：98 条，建议过滤或降权
-- **未评分**（317 条真实对话）：需人工评估或自动打分
+`--input` 与 `--output` 均为必填。支持的格式：`single_turn`、`instruction`、`chat`。
 
 ---
 
 ## 注意事项
 
-1. **路径配置**：正式工具默认读写仓库内 `data/` 目录。运行前请将输入文件放到对应位置。营销分类：
-
-```powershell
-python tools\marketing_classifier.py
-```
-
-默认读取 `data/marketing/营销对话数据.docx`，输出到同一目录。
-2. **数据隐私**：真实评论数据已进行品牌替换脱敏，商业使用需确认授权
-3. 对话转换请使用 `comment_to_dialogue.py`
+1. **路径配置**：正式 live 工具默认读写仓库内 `data/`。营销 DOCX 需放到 `data/marketing/营销对话数据.docx`。
+2. **不要使用** `converted_dialogues.txt` 作为当前默认输入或输出名。
+3. **数据隐私**：真实评论数据会做品牌替换脱敏，商业使用需确认授权。
+4. 对话转换请使用 `comment_to_dialogue.py`。

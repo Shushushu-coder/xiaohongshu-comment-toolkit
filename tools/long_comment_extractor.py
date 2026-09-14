@@ -620,7 +620,7 @@ def main():
     print("=" * 70)
     
     # 读取数据
-    input_file = PROJECT_ROOT / "data" / "comments" / "comments.json"
+    input_file = PROJECT_ROOT / "data" / "aggregated" / "comments.json"
     print(f"\n读取: {input_file}")
     
     with open(input_file, 'r', encoding='utf-8') as f:

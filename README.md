@@ -1,6 +1,8 @@
 # 小红书评论爬虫 & 数据处理流水线
 
-基于 Chrome CDP 协议的小红书评论采集工具，配套完整的数据清洗与格式转换流水线，输出可直接用于模型训练的结构化数据集。
+基于 Chrome CDP 协议的小红书评论采集工具，配套数据清洗与格式转换工具，输出可用于模型训练的结构化数据集。
+
+正式工具之间的契约以代码的默认读写路径为准。工具不是一条必须跑完的线性流水线：采集与对话合并是主路径，其余为可选分析或快照转换。
 
 ---
 
@@ -10,26 +12,27 @@
 .
 ├── start_chrome_debug.bat              # 启动 Chrome 调试模式
 ├── scraper.py                          # 评论采集主脚本
-├── diagnose.py                         # 页面结构诊断工具
+├── diagnose.py                         # 页面结构诊断工具（独立）
 ├── examples/
 │   └── note_urls.example.txt           # 批量 URL 列表示例
 ├── docs/
 │   └── technical-notes.md              # 技术路线说明
 ├── data/                               # 采集与处理输出（已 .gitignore）
-│   ├── comments/                       # 原始评论 JSON/CSV
-│   ├── aggregated/                     # 整合后的评论数据
+│   ├── comments/                       # scraper 原始评论 JSON/CSV
+│   ├── aggregated/                     # aggregator 整合后的评论数据
 │   ├── comment_to_dialogue/            # 对话格式数据
-│   ├── comment_to_single/              # 长评论数据
-│   ├── marketing/                      # 营销分类数据
-│   └── all_data_20251121/              # 最终整合数据集
+│   ├── comment_to_single/              # 长评论提取（可选）
+│   ├── marketing/                      # 营销源文件与分类输出（可选）
+│   └── all_data_20251121/              # 快照训练转换输入/输出（独立 workflow）
 └── tools/                              # 数据处理工具
-    ├── README.md                       # 工具使用指南
+    ├── README.md                       # 工具使用指南与契约说明
     ├── data_aggregator.py              # 整合分散的评论 JSON
     ├── comment_to_dialogue.py          # 评论转对话格式
-    ├── long_comment_extractor.py       # 长评论提取器
-    ├── marketing_classifier.py         # 营销对话分类
-    ├── merge_datasets.py               # 合并多数据源
-    └── merge_and_management/           # 统一格式转换与训练数据准备
+    ├── long_comment_extractor.py       # 长评论提取器（可选）
+    ├── marketing_classifier.py         # 营销对话分类（可选）
+    ├── merge_datasets.py               # 合并营销对话 + 真实评论对话
+    ├── test_pipeline_contract.py       # 合成数据契约冒烟测试
+    └── merge_and_management/           # 快照目录上的统一格式转换
 ```
 
 ---
@@ -39,29 +42,46 @@
 本项目采用**"人工登录 + 脚本接管"**的半自动化策略，规避小红书的滑块验证码和风控机制。
 
 ```
+Core collection
 Chrome 调试模式（端口 9222）
         │
         ▼
-scraper.py  ──→  data/comments/comments_*.json
-                                           │
-                                           ▼
-                                tools/data_aggregator.py
-                                           │
-                                           ▼
-                              data/aggregated/comments.json
-                                           │
-                  ┌────────────────────────┼────────────────────────┐
-                  ▼                        ▼                        ▼
-   comment_to_dialogue             long_comment_extractor   marketing_classifier
-        （317 组对话）                  （67 条长评论）            （营销分类）
-                  └────────────────────────┴────────────────────────┘
-                                           │
-                                           ▼
-                                  merge_datasets.py
-                                           │
-                                           ▼
-                               merged_dataset.jsonl（训练集）
+scraper.py
+        │
+        ▼
+data/comments/comments_{note_id}_{timestamp}_v6.json
+        │
+        ▼
+tools/data_aggregator.py
+        │
+        ▼
+data/aggregated/comments.json
+        │
+        ▼
+tools/comment_to_dialogue.py
+        │
+        ▼
+data/comment_to_dialogue/dialogues_enhanced.txt
+        │
+        ▼
+tools/merge_datasets.py  ←  另读 data/marketing/营销对话数据.docx
+        │
+        ▼
+data/merged_dataset.jsonl  (+ .json / .txt)
+
+Optional analysis
+├── tools/long_comment_extractor.py
+│     读取 aggregated/comments.json
+│     写出 data/comment_to_single/long_comments_*.txt
+└── tools/marketing_classifier.py
+      读取 data/marketing/营销对话数据.docx
+      写出 marketing_dialogues.txt / marketing_narratives_*.txt
+
+Optional snapshot conversion（需自行把文件放到快照目录并使用约定文件名）
+└── tools/merge_and_management/
 ```
+
+`marketing_classifier.py` 与 `merge_datasets.py` 都读取同一份营销 DOCX，但不是上下游：分类器写出拆分后的 txt；`merge_datasets.py` 直接解析 DOCX。
 
 ---
 
@@ -115,33 +135,51 @@ cp examples/note_urls.example.txt note_urls.txt
 https://www.xiaohongshu.com/explore/<NOTE_ID>
 ```
 
-输出保存在 `data/comments/`，每篇笔记生成 `comments_[笔记ID].json` 和对应 CSV。
+输出保存在 `data/comments/`。每篇笔记生成：
 
-### 第三步：整合数据
+- `comments_{笔记ID}_{时间戳}_v6.json` — 正式下游输入
+- 同名 `.csv` — 侧车导出，无正式消费者
+- `summary_{时间戳}_v6.txt` — 采集摘要，无正式消费者
+
+### 第三步：整合数据（主路径必选）
+
+`comment_to_dialogue.py` 和 `long_comment_extractor.py` 读取的是按帖子 ID 分组的 `comments.json`，不是 scraper 的单篇 JSON。必须先整合：
 
 ```bash
 python tools/data_aggregator.py
 ```
 
 输出到 `data/aggregated/`：
-- `comments.json` — 按帖子 ID 分组的完整评论树
-- `titles.json` — 笔记 ID 到标题的映射
-- `metadata.json` — 统计信息和热度排序
+- `comments.json` — 按帖子 ID 分组的评论列表（下游 canonical 输入）
+- `titles.json` — 笔记 ID 到标题的映射（无正式消费者）
+- `metadata.json` — 统计信息和热度排序（无正式消费者）
 
-### 第四步：转换为训练格式
+### 第四步：转换为对话并合并训练集
 
 ```bash
-# 提取多轮对话（317 组，适合对话模型、客服机器人）
 python tools/comment_to_dialogue.py
-
-# 提取长评论（67 条，适合产品分析、用户洞察）
-python tools/long_comment_extractor.py
-
-# 合并多数据源，生成最终训练集
 python tools/merge_datasets.py
 ```
 
-详细参数配置与输出格式说明见 [tools/README.md](tools/README.md)。
+`comment_to_dialogue.py` 写出 `data/comment_to_dialogue/dialogues_enhanced.txt`。
+
+`merge_datasets.py` 默认读取：
+- `data/comment_to_dialogue/dialogues_enhanced.txt`
+- `data/marketing/营销对话数据.docx`（需自行放置）
+
+并写出：
+- `data/merged_dataset.jsonl`
+- `data/merged_dataset.json`
+- `data/merged_dataset.txt`
+
+可选分析（不是 `merge_datasets.py` 的输入）：
+
+```bash
+python tools/long_comment_extractor.py
+python tools/marketing_classifier.py
+```
+
+详细参数、canonical 文件名与独立 workflow 说明见 [tools/README.md](tools/README.md)。
 
 ---
 
@@ -155,19 +193,24 @@ python tools/merge_datasets.py
     "note_id": "6819d2a1000000002100fcf2",
     "note_title": "笔记标题",
     "note_url": "https://...",
-    "author": "作者昵称"
+    "author": "作者昵称",
+    "publish_time": "",
+    "likes": 0,
+    "collects": 0
   },
+  "comment_count": 42,
+  "collected_at": "2025-11-20T14:30:00",
+  "version": "V6",
   "comments": [
     {
+      "comment_id": "comment_1",
       "username": "用户A",
       "content": "评论内容",
-      "likes": 12,
       "time": "2小时前",
-      "comment_type": "主评论"
+      "likes": 12,
+      "collected_at": "2025-11-20T14:30:00"
     }
-  ],
-  "total_comments": 42,
-  "crawl_time": "2025-11-20 14:30:00"
+  ]
 }
 ```
 

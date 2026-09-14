@@ -44,9 +44,9 @@ def load_real_dialogues(txt_path: str) -> List[str]:
     with open(txt_path, 'r', encoding='utf-8') as f:
         content = f.read()
     
-    # 分割对话（跳过标题部分）
+    # 分割对话（跳过标题块：第一段是标题+分隔线，其后每段一组对话）
     parts = content.split('\n\n')
-    dialogues = [part.strip() for part in parts[2:] if part.strip()]
+    dialogues = [part.strip() for part in parts[1:] if part.strip()]
     
     return dialogues
 
@@ -177,7 +177,7 @@ def main():
     # 加载数据
     print("\n📖 加载数据...")
     marketing_path = PROJECT_ROOT / "data" / "marketing" / "营销对话数据.docx"
-    real_path = PROJECT_ROOT / "data" / "comment_to_dialogue" / "converted_dialogues.txt"
+    real_path = PROJECT_ROOT / "data" / "comment_to_dialogue" / "dialogues_enhanced.txt"
     
     marketing_dialogues = extract_marketing_dialogues(str(marketing_path))
     real_dialogues = load_real_dialogues(real_path)
