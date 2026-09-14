@@ -12,6 +12,8 @@ from pathlib import Path
 from collections import defaultdict
 import random
 
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+
 
 class DataConverter:
     """数据转换器"""
@@ -530,9 +532,9 @@ def main():
     import argparse
     
     parser = argparse.ArgumentParser(description='数据转换工具')
-    parser.add_argument('--input', type=str, default='data/all_data_20251121',
+    parser.add_argument('--input', type=str, default=str(PROJECT_ROOT / "data" / "all_data_20251121"),
                        help='输入目录 (包含原始txt文件)')
-    parser.add_argument('--output', type=str, default='data/all_data_20251121/converted_data',
+    parser.add_argument('--output', type=str, default=str(PROJECT_ROOT / "data" / "all_data_20251121" / "converted_data"),
                        help='输出目录')
     parser.add_argument('--seed', type=int, default=42,
                        help='随机种子')

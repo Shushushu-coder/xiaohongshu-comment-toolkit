@@ -13,7 +13,7 @@ data/comments/comments_*.json   (爬虫输出)
   data_aggregator.py            整合、清洗多个 JSON 文件
          │
          ▼
-  data/comment_aggregated/comments.json
+  data/aggregated/comments.json
          │
          ├──→ comment_to_dialogue.py  →  对话格式（问答对）
          │
@@ -45,11 +45,11 @@ data/comments/comments_*.json   (爬虫输出)
 
 ### 第一步：整合原始评论
 
-```bash
-python data_aggregator.py
+```powershell
+python tools\data_aggregator.py
 ```
 
-输出到 `data/comment_aggregated/`：
+输出到 `data/aggregated/`：
 - `comments.json` — 按帖子 ID 分组，含回复树结构
 - `titles.json` — 笔记 ID → 标题映射
 - `metadata.json` — 统计信息、热度排序
@@ -58,8 +58,8 @@ python data_aggregator.py
 
 ### 第二步A：转换为对话格式（推荐用于 AI 训练）
 
-```bash
-python comment_to_dialogue.py
+```powershell
+python tools\comment_to_dialogue.py
 ```
 
 **三种提取策略**，合计从 1163 条评论中提取 317 组对话（转换率 27.3%）：
@@ -96,9 +96,11 @@ converter.similarity_threshold = 0.85 # 去重相似度阈值
 
 ### 第二步B：提取长评论（推荐用于产品分析）
 
-```bash
-python long_comment_extractor.py
+```powershell
+python tools\long_comment_extractor.py
 ```
+
+默认读取 `data/comments/comments.json`，输出到 `data/comment_to_single/`。
 
 从 1163 条评论中筛选 67 条长评论（提取率 5.8%），按质量评分排序。
 
@@ -127,11 +129,15 @@ extractor = LongCommentExtractor(min_length=100)  # 更精选
 
 ### 第三步：合并数据集
 
-```bash
-python merge_datasets.py
+```powershell
+python tools\merge_datasets.py
 ```
 
-将真实评论对话与营销对话数据合并，生成 `merged_dataset.jsonl`（可直接用于训练）。
+将真实评论对话与营销对话数据合并，生成 `data/merged_dataset.jsonl`（可直接用于训练）。
+
+默认读取：
+- `data/marketing/营销对话数据.docx`
+- `data/comment_to_dialogue/converted_dialogues.txt`
 
 依赖安装见仓库根目录：
 
@@ -202,7 +208,7 @@ python -m pip install -r requirements.txt
 
 ```bash
 # 准备对话生成训练数据（instruction 格式）
-python merge_and_management/prepare_dialogue_generation.py \
+python tools\merge_and_management\prepare_dialogue_generation.py \
     --input converted_data/by_type/dialogues.jsonl \
     --output tasks/dialogue_generation \
     --format instruction \
@@ -222,6 +228,12 @@ python merge_and_management/prepare_dialogue_generation.py \
 
 ## 注意事项
 
-1. **路径配置**：脚本内有部分硬编码路径（如 `/mnt/user-data/uploads/`），使用前需按实际路径修改
+1. **路径配置**：正式工具默认读写仓库内 `data/` 目录。运行前请将输入文件放到对应位置。营销分类：
+
+```powershell
+python tools\marketing_classifier.py
+```
+
+默认读取 `data/marketing/营销对话数据.docx`，输出到同一目录。
 2. **数据隐私**：真实评论数据已进行品牌替换脱敏，商业使用需确认授权
 3. 对话转换请使用 `comment_to_dialogue.py`

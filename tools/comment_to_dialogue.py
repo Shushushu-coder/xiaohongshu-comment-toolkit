@@ -11,8 +11,11 @@
 import json
 import re
 from collections import defaultdict
+from pathlib import Path
 from typing import List, Dict, Tuple, Optional, Set
 from difflib import SequenceMatcher
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 
 class EnhancedCommentConverter:
@@ -417,7 +420,7 @@ def main():
     print("=" * 60)
     
     # 读取数据
-    input_file = r'data\comments\comments.json'
+    input_file = PROJECT_ROOT / "data" / "comments" / "comments.json"
     print(f"\n读取: {input_file}")
     
     with open(input_file, 'r', encoding='utf-8') as f:
@@ -436,7 +439,9 @@ def main():
     dialogues = converter.convert_all(data)
     
     # 保存
-    output_file = r'data\comment_to_dialogue\dialogues_enhanced.txt'
+    output_dir = PROJECT_ROOT / "data" / "comment_to_dialogue"
+    output_dir.mkdir(parents=True, exist_ok=True)
+    output_file = output_dir / "dialogues_enhanced.txt"
     with open(output_file, 'w', encoding='utf-8') as f:
         f.write("评论转对话 - 增强版输出\n")
         f.write("=" * 50 + "\n\n")
@@ -449,7 +454,7 @@ def main():
     report = converter.generate_report(total_comments, dialogues)
     print(report)
     
-    with open(r'data\comment_to_dialogue\report_enhanced.txt', 'w', encoding='utf-8') as f:
+    with open(output_dir / "report_enhanced.txt", 'w', encoding='utf-8') as f:
         f.write(report)
     
     # 示例

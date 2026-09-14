@@ -7,8 +7,11 @@
 """
 
 import json
+from pathlib import Path
 from docx import Document
 from typing import List, Dict
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 
 def extract_marketing_dialogues(docx_path: str) -> List[str]:
@@ -173,10 +176,10 @@ def main():
     
     # 加载数据
     print("\n📖 加载数据...")
-    marketing_path = '/mnt/user-data/uploads/营销对话数据.docx'
-    real_path = '/home/claude/converted_dialogues.txt'
+    marketing_path = PROJECT_ROOT / "data" / "marketing" / "营销对话数据.docx"
+    real_path = PROJECT_ROOT / "data" / "comment_to_dialogue" / "converted_dialogues.txt"
     
-    marketing_dialogues = extract_marketing_dialogues(marketing_path)
+    marketing_dialogues = extract_marketing_dialogues(str(marketing_path))
     real_dialogues = load_real_dialogues(real_path)
     
     print(f"   营销对话: {len(marketing_dialogues)} 组")
@@ -184,12 +187,14 @@ def main():
     
     # 创建多种格式的数据集
     print("\n🔄 生成数据集...")
+    output_dir = PROJECT_ROOT / "data"
+    output_dir.mkdir(parents=True, exist_ok=True)
     
     # 1. JSONL格式（推荐用于大模型训练）
     create_jsonl_dataset(
         marketing_dialogues, 
         real_dialogues,
-        '/home/claude/merged_dataset.jsonl'
+        output_dir / "merged_dataset.jsonl"
     )
     
     print()
@@ -198,7 +203,7 @@ def main():
     create_json_dataset(
         marketing_dialogues,
         real_dialogues,
-        '/home/claude/merged_dataset.json'
+        output_dir / "merged_dataset.json"
     )
     
     print()
@@ -207,7 +212,7 @@ def main():
     create_mixed_txt_dataset(
         marketing_dialogues,
         real_dialogues,
-        '/home/claude/merged_dataset.txt'
+        output_dir / "merged_dataset.txt"
     )
     
     print("\n" + "=" * 70)

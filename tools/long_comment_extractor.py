@@ -18,8 +18,11 @@
 import json
 import re
 from collections import defaultdict
+from pathlib import Path
 from typing import List, Dict, Tuple, Optional, Set
 from dataclasses import dataclass, field
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 
 @dataclass
@@ -617,7 +620,7 @@ def main():
     print("=" * 70)
     
     # 读取数据
-    input_file = '/mnt/user-data/uploads/comments.json'
+    input_file = PROJECT_ROOT / "data" / "comments" / "comments.json"
     print(f"\n读取: {input_file}")
     
     with open(input_file, 'r', encoding='utf-8') as f:
@@ -636,14 +639,16 @@ def main():
     analyses = extractor.extract_from_data(data)
     
     # 保存完整结果
-    output_file = '/mnt/user-data/outputs/long_comments_full.txt'
+    output_dir = PROJECT_ROOT / "data" / "comment_to_single"
+    output_dir.mkdir(parents=True, exist_ok=True)
+    output_file = output_dir / "long_comments_full.txt"
     with open(output_file, 'w', encoding='utf-8') as f:
         f.write(extractor.format_output(analyses))
     
     print(f"\n✅ 已保存 {len(analyses)} 条长评论到: {output_file}")
     
     # 保存TOP评论
-    top_file = '/mnt/user-data/outputs/long_comments_top50.txt'
+    top_file = output_dir / "long_comments_top50.txt"
     with open(top_file, 'w', encoding='utf-8') as f:
         f.write(extractor.format_output(analyses, top_n=50))
     
@@ -653,7 +658,7 @@ def main():
     report = extractor.generate_report()
     print(report)
     
-    with open('/mnt/user-data/outputs/long_comments_report.txt', 'w', encoding='utf-8') as f:
+    with open(output_dir / "long_comments_report.txt", 'w', encoding='utf-8') as f:
         f.write(report)
     
     # 显示TOP5示例

@@ -20,7 +20,8 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import NoSuchElementException, TimeoutException
-from selenium.webdriver.common.action_chains import ActionChains
+
+PROJECT_ROOT = Path(__file__).resolve().parent
 
 
 class CommentExtractorV6:
@@ -29,7 +30,7 @@ class CommentExtractorV6:
     def __init__(self, debug=False):
         self.driver = None
         self.wait = None
-        self.data_dir = Path("data/comments")
+        self.data_dir = PROJECT_ROOT / "data" / "comments"
         self.data_dir.mkdir(parents=True, exist_ok=True)
         self.debug = debug  # 调试模式
     
@@ -1207,7 +1208,7 @@ def main():
         extractor.process_current_page(max_scrolls=20)
         
     elif choice == "2":
-        url_file = Path("note_urls.txt")
+        url_file = PROJECT_ROOT / "note_urls.txt"
         
         if not url_file.exists():
             print(f"\n❌ 未找到文件: {url_file}")

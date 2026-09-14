@@ -17,7 +17,7 @@
 │   └── technical-notes.md              # 技术路线说明
 ├── data/                               # 采集与处理输出（已 .gitignore）
 │   ├── comments/                       # 原始评论 JSON/CSV
-│   ├── comment_aggregated/             # 整合后的评论数据
+│   ├── aggregated/                     # 整合后的评论数据
 │   ├── comment_to_dialogue/            # 对话格式数据
 │   ├── comment_to_single/              # 长评论数据
 │   ├── marketing/                      # 营销分类数据
@@ -48,7 +48,7 @@ scraper.py  ──→  data/comments/comments_*.json
                                 tools/data_aggregator.py
                                            │
                                            ▼
-                              data/comment_aggregated/comments.json
+                              data/aggregated/comments.json
                                            │
                   ┌────────────────────────┼────────────────────────┐
                   ▼                        ▼                        ▼
@@ -123,7 +123,7 @@ https://www.xiaohongshu.com/explore/<NOTE_ID>
 python tools/data_aggregator.py
 ```
 
-输出到 `data/comment_aggregated/`：
+输出到 `data/aggregated/`：
 - `comments.json` — 按帖子 ID 分组的完整评论树
 - `titles.json` — 笔记 ID 到标题的映射
 - `metadata.json` — 统计信息和热度排序

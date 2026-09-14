@@ -10,13 +10,18 @@ import re
 from pathlib import Path
 from datetime import datetime
 
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+
 
 class DataAggregator:
     """数据整合器"""
     
-    def __init__(self, raw_data_dir="data/comments"):
-        self.raw_dir = Path(raw_data_dir)
-        self.output_dir = Path("data/aggregated")
+    def __init__(self, raw_data_dir=None):
+        if raw_data_dir is None:
+            self.raw_dir = PROJECT_ROOT / "data" / "comments"
+        else:
+            self.raw_dir = Path(raw_data_dir)
+        self.output_dir = PROJECT_ROOT / "data" / "aggregated"
         
         # 创建输出目录
         self.output_dir.mkdir(parents=True, exist_ok=True)
@@ -287,9 +292,9 @@ def main():
     """)
     
     # 获取原始数据目录
-    default_dir = "data/comments"
+    default_dir = PROJECT_ROOT / "data" / "comments"
     print(f"\n请输入原始数据目录 (默认: {default_dir})")
-    raw_dir = input("路径: ").strip() or default_dir
+    raw_dir = input("路径: ").strip() or None
     
     # 创建整合器
     aggregator = DataAggregator(raw_dir)

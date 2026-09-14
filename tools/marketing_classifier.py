@@ -13,8 +13,11 @@
 
 from docx import Document
 import re
+from pathlib import Path
 from typing import List, Dict, Tuple
 from collections import defaultdict
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 
 class MarketingDialogueClassifier:
@@ -406,11 +409,12 @@ def main():
     print("=" * 70)
     
     # 读取文件
-    input_file = '/mnt/user-data/uploads/营销对话数据.docx'
+    marketing_dir = PROJECT_ROOT / "data" / "marketing"
+    input_file = marketing_dir / "营销对话数据.docx"
     print(f"\n读取文件: {input_file}")
     
     classifier = MarketingDialogueClassifier()
-    paragraphs = classifier.read_docx(input_file)
+    paragraphs = classifier.read_docx(str(input_file))
     
     print(f"总段落数: {len(paragraphs)}")
     
@@ -420,24 +424,25 @@ def main():
     
     # 保存结果
     print("\n保存结果...")
+    marketing_dir.mkdir(parents=True, exist_ok=True)
     
     # 保存多轮对话
-    dialogue_file = '/home/claude/marketing_dialogues.txt'
+    dialogue_file = marketing_dir / "marketing_dialogues.txt"
     classifier.save_dialogues(dialogue_file)
     
     # 保存所有长叙述
-    narrative_file_full = '/home/claude/marketing_narratives_full.txt'
+    narrative_file_full = marketing_dir / "marketing_narratives_full.txt"
     classifier.save_narratives(narrative_file_full)
     
     # 保存TOP50长叙述
-    narrative_file_top = '/home/claude/marketing_narratives_top50.txt'
+    narrative_file_top = marketing_dir / "marketing_narratives_top50.txt"
     classifier.save_narratives(narrative_file_top, top_n=50)
     
     # 生成报告
     report = classifier.generate_report()
     print(report)
     
-    with open('/home/claude/marketing_classification_report.txt', 'w', encoding='utf-8') as f:
+    with open(marketing_dir / "marketing_classification_report.txt", 'w', encoding='utf-8') as f:
         f.write(report)
     
     # 显示示例

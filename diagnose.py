@@ -3,9 +3,12 @@
 用于诊断点赞数、收藏数、评论数的提取
 """
 import time
+from pathlib import Path
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 import re
+
+PROJECT_ROOT = Path(__file__).resolve().parent
 
 def diagnose_interactions():
     """诊断当前页面的互动数据"""
@@ -186,7 +189,7 @@ def diagnose_interactions():
                 print(match[:500])
         
         # 保存诊断报告
-        report_file = "interaction_diagnosis.txt"
+        report_file = PROJECT_ROOT / "interaction_diagnosis.txt"
         with open(report_file, 'w', encoding='utf-8') as f:
             f.write(f"URL: {url}\n\n")
             f.write("="*60 + "\n")
