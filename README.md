@@ -1,12 +1,16 @@
 # Xiaohongshu Comment Toolkit
 
+**English** | [简体中文](README.zh-CN.md)
+
+## Overview
+
 A lightweight toolkit for collecting and processing Xiaohongshu comment data for research and analysis.
 
-轻量级小红书评论采集与研究数据处理工具包。面向需要从已登录浏览器会话中收集评论，再做聚合、对话转换或数据集合并的研究与分析场景。
+It is intended for research and analysis workflows that collect comments from an already logged-in browser session, then aggregate them, convert them to dialogue text, or merge datasets.
 
-它不是完整的小红书爬虫平台。
+It is not a full Xiaohongshu crawler platform.
 
-## What this project includes
+This toolkit covers:
 
 - Comment collection
 - Data aggregation
@@ -50,7 +54,7 @@ Copy-Item .\examples\note_urls.example.txt .\note_urls.txt
 Then:
 
 1. Edit `note_urls.txt` and put one Xiaohongshu note URL per line (`#` starts a comment).
-2. Run `start_chrome_debug.bat`.
+2. Run `.\start_chrome_debug.bat`.
 3. In the Chrome window that opens, log in to Xiaohongshu normally.
 4. From the repository root, run:
 
@@ -62,11 +66,11 @@ The scraper is interactive. Choose single-note (current tab), batch from `note_u
 
 `note_urls.txt` is a local runtime file and is gitignored. Keep using the tracked example at `examples/note_urls.example.txt`.
 
+## How It Works
+
 The scraper connects to a user-controlled Chrome session through Chrome DevTools Protocol. Users log in normally in the browser, and the script processes pages accessible in that session.
 
-程序通过 Chrome DevTools Protocol 连接用户自行启动并登录的浏览器会话。
-
-## Workflow
+## Main Workflow
 
 Live collection and processing path:
 
@@ -140,7 +144,7 @@ It uses a separate artifact naming convention and is not part of the live collec
 
 Default snapshot input directory: `data/all_data_20251121/`, with names such as `real_dialogues.txt` and `marketing_dialogues.txt`. See [tools/README.md](tools/README.md) for commands.
 
-## Project structure
+## Project Structure
 
 ```text
 xiaohongshu-comment-toolkit/
@@ -162,7 +166,7 @@ xiaohongshu-comment-toolkit/
 └── data/                       # generated locally, ignored
 ```
 
-## Output artifacts
+## Output Artifacts
 
 | Artifact | Purpose |
 |----------|---------|
@@ -186,12 +190,10 @@ xiaohongshu-comment-toolkit/
 - Collected comments are stored as a flat list, not a nested reply tree
 - Dataset merge requires the marketing DOCX at the default path
 
-## Responsible use
+## Responsible Use
 
 Use this project only for content you are authorized to access and in accordance with applicable platform terms, laws, research ethics, and privacy requirements.
 
-请仅用于你有权访问的内容，并遵守平台条款、法律法规、研究伦理与隐私要求。
-
 ## License
 
-This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
+This project is licensed under the [MIT License](LICENSE).
