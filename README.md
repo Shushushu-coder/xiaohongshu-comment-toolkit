@@ -39,8 +39,8 @@ python -m pip install -r requirements.txt
 ## Quick Start
 
 ```powershell
-git clone https://github.com/Shushushu-coder/xiaohonshu_scraper.git
-cd xiaohonshu_scraper
+git clone https://github.com/Shushushu-coder/xiaohongshu-comment-toolkit.git
+cd xiaohongshu-comment-toolkit
 
 python -m pip install -r requirements.txt
 
