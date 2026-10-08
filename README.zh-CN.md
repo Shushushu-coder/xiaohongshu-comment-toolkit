@@ -17,6 +17,7 @@
 - 对话转换
 - 可选分析工具
 - 数据集合并
+- 关键词搜索 + 用户调研报告
 
 ## 功能
 
@@ -102,6 +103,43 @@ data/merged_dataset.jsonl
 
 长评论提取、营销文本分类、页面诊断以及 `tools/merge_and_management/` 都不是这条路径的必要步骤。工具级输入/输出约定见 [tools/README.md](tools/README.md)。实现说明见 [docs/technical-notes.md](docs/technical-notes.md)。
 
+## 用户调研工作流
+
+`tools/user_research.py` 面向"抛出一个问题 → 拿到小红书用户的泛问卷结果"的场景：
+按关键词搜索笔记（或使用 URL 列表）→ 逐篇采集笔记正文 + 评论 → 生成 Markdown 调研报告和可供 AI 分析的语料文件。
+
+```powershell
+python tools\user_research.py -k "露营装备" --notes 15 -q "露营新手的核心痛点是什么"
+```
+
+常用参数：
+
+| 参数 | 说明 |
+|------|------|
+| `-k, --keyword` | 搜索关键词，可多次指定 |
+| `--url` / `--urls` | 直接给定笔记 URL / URL 列表文件（不搜索） |
+| `-q, --question` | 调研问题，写进报告标题与 AI 提示词 |
+| `--notes` | 每个关键词采集的笔记数（默认 10） |
+| `--scrolls` | 每篇笔记评论滚动轮数（默认 8） |
+| `--no-llm` | 跳过 LLM 自动总结 |
+| `--from-json` | 从已有 `research_data.json` 重新生成报告（不重新采集） |
+
+输出目录 `data/research/{问题}_{时间戳}/`：
+
+- `research_data.json`：结构化原始数据（正文、标签、评论、互动数）
+- `corpus.txt`：供 AI 阅读的纯文本语料
+- `report.md`：调研报告（统计、高赞评论 Top 20、笔记明细、AI 提示词模板）
+
+**AI 总结（可选）**：配置以下环境变量后，工具会在报告开头自动生成 AI 分析段落；未配置时报告内含提示词模板，把提示词 + `corpus.txt` 发给任意大模型即可。
+
+```powershell
+$env:XHS_LLM_API_KEY = "sk-..."        # 也可用 OPENAI_API_KEY
+$env:XHS_LLM_BASE = "https://api.deepseek.com/v1"   # 任意 OpenAI 兼容接口
+$env:XHS_LLM_MODEL = "deepseek-chat"
+```
+
+采集仍会向 `data/comments/` 写入 `_v6.json`，下游聚合工具不受影响。
+
 ## 可选分析工具
 
 ### `tools/long_comment_extractor.py`
@@ -160,6 +198,7 @@ xiaohongshu-comment-toolkit/
 │   ├── long_comment_extractor.py
 │   ├── marketing_classifier.py
 │   ├── merge_datasets.py
+│   ├── user_research.py
 │   └── merge_and_management/
 ├── docs/
 │   └── technical-notes.md
@@ -178,6 +217,7 @@ xiaohongshu-comment-toolkit/
 | `data/merged_dataset.jsonl` | 规范的合并数据集（同时还会写出 `.json` / `.txt`） |
 | `data/comment_to_single/long_comments_*.txt` | 可选的长评论分析 |
 | `data/marketing/marketing_*.txt` | 可选的营销文本分类 |
+| `data/research/*/research_data.json`、`corpus.txt`、`report.md` | 用户调研采集与报告输出 |
 
 ## 已知限制
 

@@ -17,6 +17,7 @@ This toolkit covers:
 - Dialogue conversion
 - Optional analysis utilities
 - Dataset merging
+- Keyword search + user research reports
 
 ## Features
 
@@ -102,6 +103,43 @@ data/merged_dataset.jsonl
 
 Long-comment extraction, marketing classification, page diagnosis, and `tools/merge_and_management/` are not required steps in this path. Tool-level input/output contracts are in [tools/README.md](tools/README.md). Implementation notes: [docs/technical-notes.md](docs/technical-notes.md).
 
+## User Research Workflow
+
+`tools/user_research.py` covers the "ask a question → get a broad survey of Xiaohongshu users" use case:
+search notes by keyword (or pass a URL list) → collect post content + comments per note → produce a Markdown research report plus an AI-ready corpus file.
+
+```powershell
+python tools\user_research.py -k "露营装备" --notes 15 -q "What pain points do camping beginners have"
+```
+
+Common options:
+
+| Option | Description |
+|--------|-------------|
+| `-k, --keyword` | Search keyword, repeatable |
+| `--url` / `--urls` | Note URL(s) or a URL list file (skips search) |
+| `-q, --question` | Research question; used in the report title and AI prompt |
+| `--notes` | Notes collected per keyword (default 10) |
+| `--scrolls` | Comment scroll rounds per note (default 8) |
+| `--no-llm` | Skip LLM summarization |
+| `--from-json` | Regenerate the report from an existing `research_data.json` without scraping |
+
+Output directory `data/research/{question}_{timestamp}/`:
+
+- `research_data.json`: structured raw data (post content, hashtags, comments, engagement)
+- `corpus.txt`: plain-text corpus for AI analysis
+- `report.md`: research report (stats, top-20 liked comments, per-note detail, AI prompt template)
+
+**AI summary (optional)**: with these environment variables set, the tool prepends an AI-generated analysis to the report. Without them, the report embeds a prompt template — paste it together with `corpus.txt` into any LLM.
+
+```powershell
+$env:XHS_LLM_API_KEY = "sk-..."        # OPENAI_API_KEY also works
+$env:XHS_LLM_BASE = "https://api.deepseek.com/v1"   # any OpenAI-compatible endpoint
+$env:XHS_LLM_MODEL = "deepseek-chat"
+```
+
+Collection still writes `_v6.json` files to `data/comments/`, so downstream aggregation tools are unaffected.
+
 ## Optional Analysis Tools
 
 ### `tools/long_comment_extractor.py`
@@ -160,6 +198,7 @@ xiaohongshu-comment-toolkit/
 │   ├── long_comment_extractor.py
 │   ├── marketing_classifier.py
 │   ├── merge_datasets.py
+│   ├── user_research.py
 │   └── merge_and_management/
 ├── docs/
 │   └── technical-notes.md
@@ -178,6 +217,7 @@ xiaohongshu-comment-toolkit/
 | `data/merged_dataset.jsonl` | Canonical merged dataset (also writes `.json` / `.txt`) |
 | `data/comment_to_single/long_comments_*.txt` | Optional long-comment analysis |
 | `data/marketing/marketing_*.txt` | Optional marketing classification |
+| `data/research/*/research_data.json`, `corpus.txt`, `report.md` | User research collection and report output |
 
 ## Known Limitations
 

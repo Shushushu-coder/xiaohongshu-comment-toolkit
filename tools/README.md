@@ -69,7 +69,15 @@ Requires `data/marketing/营销对话数据.docx`. Canonical terminal file is `d
 |--------|---------------|----------------|---------|
 | `long_comment_extractor.py` | `data/aggregated/comments.json` | `data/comment_to_single/long_comments_full.txt`, `long_comments_top50.txt`, `long_comments_report.txt` | Longer single-author comments |
 | `marketing_classifier.py` | `data/marketing/营销对话数据.docx` | `data/marketing/marketing_dialogues.txt`, `marketing_narratives_*.txt`, `marketing_classification_report.txt` | Split marketing DOCX into dialogues vs narratives |
+| `user_research.py` | keyword / URL list | `data/research/{question}_{ts}/research_data.json`, `corpus.txt`, `report.md` | User research: search notes, scrape post content + comments, generate a Markdown report; optional OpenAI-compatible LLM summary via `XHS_LLM_*` env vars |
 
+```powershell
+python tools\long_comment_extractor.py
+python tools\marketing_classifier.py
+python tools\user_research.py -k "keyword" --notes 10 -q "research question"
+```
+
+`user_research.py` imports `CommentExtractorV6` from the repository-root `scraper.py` and also writes per-note `comments_*_v6.json` files to `data/comments/`, so `data_aggregator.py` can still consume its output. `--from-json` regenerates the report without scraping.
 ```powershell
 python tools\long_comment_extractor.py
 python tools\marketing_classifier.py
