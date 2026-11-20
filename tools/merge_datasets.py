@@ -8,7 +8,6 @@
 
 import json
 from pathlib import Path
-from docx import Document
 from typing import List, Dict
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -16,6 +15,11 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 def extract_marketing_dialogues(docx_path: str) -> List[str]:
     """从DOCX提取营销对话"""
+    try:
+        from docx import Document
+    except ImportError:
+        print("❌ 需要 python-docx 依赖，请先运行: pip install python-docx")
+        raise SystemExit(1)
     doc = Document(docx_path)
     
     dialogues = []
@@ -178,7 +182,13 @@ def main():
     print("\n📖 加载数据...")
     marketing_path = PROJECT_ROOT / "data" / "marketing" / "营销对话数据.docx"
     real_path = PROJECT_ROOT / "data" / "comment_to_dialogue" / "dialogues_enhanced.txt"
-    
+
+    for path in (marketing_path, real_path):
+        if not path.exists():
+            print(f"❌ 文件不存在: {path}")
+            print("   请先运行上游工具生成输入数据（见 tools/README.md）")
+            return
+
     marketing_dialogues = extract_marketing_dialogues(str(marketing_path))
     real_dialogues = load_real_dialogues(real_path)
     

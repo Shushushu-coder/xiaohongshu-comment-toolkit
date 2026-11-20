@@ -19,6 +19,7 @@ env/
 
 # Local archive / historical development files
 /archive/
+/wip/
 
 # Local runtime URL input (tracked example: examples/note_urls.example.txt)
 /note_urls.txt

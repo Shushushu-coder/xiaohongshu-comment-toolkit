@@ -60,7 +60,7 @@ def diagnose_interactions():
                         if num > 0:
                             found_likes.append((desc, num))
                             print(f"    ✅ [{desc}]: {num}")
-                    except:
+                    except (ValueError, TypeError):
                         pass
         
         # 查找收藏数相关的模式
@@ -83,7 +83,7 @@ def diagnose_interactions():
                         if num > 0:
                             found_collects.append((desc, num))
                             print(f"    ✅ [{desc}]: {num}")
-                    except:
+                    except (ValueError, TypeError):
                         pass
         
         # 查找评论数相关的模式
@@ -106,7 +106,7 @@ def diagnose_interactions():
                         if num > 0:
                             found_comments.append((desc, num))
                             print(f"    ✅ [{desc}]: {num}")
-                    except:
+                    except (ValueError, TypeError):
                         pass
         
         # 尝试通过CSS选择器查找
@@ -215,7 +215,10 @@ def diagnose_interactions():
         import traceback
         traceback.print_exc()
     
-    input("\n按回车键关闭...")
+    try:
+        input("\n按回车键关闭...")
+    except EOFError:
+        pass
 
 if __name__ == "__main__":
     diagnose_interactions()

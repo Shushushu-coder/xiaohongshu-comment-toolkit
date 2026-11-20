@@ -308,10 +308,11 @@ def main():
         print("  • titles.json   - 快速查找帖子标题")
         print("  • metadata.json - 查看统计信息和帖子概览")
     
-    input("\n按回车退出...")
+    try:
+        input("\n按回车退出...")
+    except EOFError:
+        pass
 
 
 if __name__ == "__main__":
-
-        
     main()
